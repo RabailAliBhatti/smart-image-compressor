@@ -7,6 +7,11 @@ __pycache__/
 compressed_images/
 *.zip
 
+# Local SQLite Analytics Database
+compressor.db
+*.db
+*.sqlite3
+
 # Personal input images (preserves directory structure via .gitkeep)
 images/*
 !images/.gitkeep

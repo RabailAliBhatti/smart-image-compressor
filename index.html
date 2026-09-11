@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Image Compressor | Batch Compress JPG, PNG, WebP Under 500KB</title>
-  <meta name="description" content="Free, open-source batch image compressor with an interactive dashboard and CLI. Compress JPG, PNG, and WebP images strictly under 500 KB or custom size limits with zero visual degradation.">
+  <meta name="description" content="Free, open-source batch image compressor with an interactive dashboard, SQLite analytics tracking, and CLI. Compress JPG, PNG, and WebP images strictly under 500 KB or custom size limits with zero visual degradation.">
   <meta name="keywords" content="image compressor, compress image under 500kb, batch image compression, png compressor, webp compressor, reduce image size, photo shrinker, certificate compressor, python image optimizer">
   <meta name="author" content="Rabail Ali Bhatti">
   <meta property="og:title" content="Smart Image Compressor | Batch Compress JPG, PNG, WebP Under 500KB">
-  <meta property="og:description" content="Offline-first image compression dashboard and CLI. Compress pictures, certificates, and scans under size limits effortlessly.">
+  <meta property="og:description" content="Offline-first image compression dashboard and CLI with SQLite analytics. Compress pictures, certificates, and scans under size limits effortlessly.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Smart Image Compressor">
-  <meta name="twitter:description" content="Batch compress JPG, PNG, WebP under 500KB with interactive dashboard.">
+  <meta name="twitter:description" content="Batch compress JPG, PNG, WebP under 500KB with interactive dashboard and activity log.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -33,9 +33,30 @@
       </div>
       <div class="brand-info">
         <h1>Image Compressor</h1>
-        <p>Batch compression utility for documents and photos</p>
+        <p>Batch compression utility & analytics engine</p>
       </div>
     </div>
+
+    <!-- Top Navigation Tabs -->
+    <nav class="header-nav">
+      <button type="button" class="nav-tab-btn active" id="navCompressorBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="4 14 10 14 10 20"></polyline>
+          <polyline points="20 10 14 10 14 4"></polyline>
+          <line x1="14" y1="10" x2="21" y2="3"></line>
+          <line x1="3" y1="21" x2="10" y2="14"></line>
+        </svg>
+        Compressor
+      </button>
+      <button type="button" class="nav-tab-btn" id="navAnalyticsBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Analytics & History
+      </button>
+    </nav>
 
     <div class="header-status" id="serverStatusPill">
       <span class="status-dot" id="statusDot"></span>
@@ -43,8 +64,8 @@
     </div>
   </header>
 
-  <!-- Main Grid Layout -->
-  <div class="main-layout">
+  <!-- VIEW 1: COMPRESSOR WORKSPACE -->
+  <div class="main-layout" id="compressorWorkspace">
 
     <!-- Left Configuration Sidebar -->
     <aside class="config-sidebar">
@@ -69,9 +90,32 @@
         </div>
       </div>
 
+      <!-- Preset Application Profiles -->
+      <div>
+        <div class="section-label">02. Application Profile</div>
+        <div class="profile-tiles">
+          <button type="button" class="profile-btn active" data-profile="standard" data-size="500" data-format="auto">
+            <span>Standard General</span>
+            <span class="profile-tag">&lt; 500 KB</span>
+          </button>
+          <button type="button" class="profile-btn" data-profile="gov" data-size="200" data-format="jpeg">
+            <span>Gov / Job Portal</span>
+            <span class="profile-tag">&lt; 200 KB</span>
+          </button>
+          <button type="button" class="profile-btn" data-profile="passport" data-size="100" data-format="jpeg">
+            <span>Passport & CNIC Photo</span>
+            <span class="profile-tag">&lt; 100 KB</span>
+          </button>
+          <button type="button" class="profile-btn" data-profile="web" data-size="150" data-format="webp">
+            <span>Web Performance</span>
+            <span class="profile-tag">&lt; 150 KB</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Target Size Configuration -->
       <div>
-        <div class="section-label">02. Maximum File Size</div>
+        <div class="section-label">03. Maximum File Size</div>
         <div class="input-with-unit">
           <input type="number" id="targetSizeInput" class="num-input" value="500" min="20" max="10000" step="10">
           <span class="unit-label">KB</span>
@@ -83,49 +127,64 @@
 
         <div class="preset-grid">
           <button type="button" class="preset-btn" data-size="100">100 KB</button>
-          <button type="button" class="preset-btn" data-size="250">250 KB</button>
+          <button type="button" class="preset-btn" data-size="200">200 KB</button>
           <button type="button" class="preset-btn active" data-size="500">500 KB</button>
-          <button type="button" class="preset-btn" data-size="1000">1000 KB (1 MB)</button>
+          <button type="button" class="preset-btn" data-size="1000">1000 KB</button>
+        </div>
+      </div>
+
+      <!-- Dimension Constraints -->
+      <div>
+        <div class="section-label">04. Dimensional Limits (Optional)</div>
+        <div class="dim-grid">
+          <div class="dim-box">
+            <label class="dim-label" for="maxWidthInput">Max Width (px)</label>
+            <input type="number" id="maxWidthInput" class="dim-input" placeholder="Original" min="100" step="50">
+          </div>
+          <div class="dim-box">
+            <label class="dim-label" for="maxHeightInput">Max Height (px)</label>
+            <input type="number" id="maxHeightInput" class="dim-input" placeholder="Original" min="100" step="50">
+          </div>
         </div>
       </div>
 
       <!-- Format Selection -->
       <div>
-        <div class="section-label">03. Output Format</div>
+        <div class="section-label">05. Output Format</div>
         <div class="radio-tile-group">
           <label class="radio-tile">
             <input type="radio" name="formatOption" value="auto" checked>
             <div class="radio-tile-text">
               <span class="radio-tile-title">Auto (Keep Original)</span>
-              <span class="radio-tile-desc">Keeps PNG as PNG, JPG as JPG, etc.</span>
+              <span class="radio-tile-desc">Preserves PNG, JPG, or WebP</span>
             </div>
           </label>
           <label class="radio-tile">
             <input type="radio" name="formatOption" value="png">
             <div class="radio-tile-text">
               <span class="radio-tile-title">PNG</span>
-              <span class="radio-tile-desc">Preserves transparency & crisp edges</span>
+              <span class="radio-tile-desc">Preserves transparency & sharp lines</span>
             </div>
           </label>
           <label class="radio-tile">
             <input type="radio" name="formatOption" value="jpeg">
             <div class="radio-tile-text">
               <span class="radio-tile-title">JPEG</span>
-              <span class="radio-tile-desc">Best for photos & universal compatibility</span>
+              <span class="radio-tile-desc">Best compatibility for job & gov portals</span>
             </div>
           </label>
           <label class="radio-tile">
             <input type="radio" name="formatOption" value="webp">
             <div class="radio-tile-text">
               <span class="radio-tile-title">WebP</span>
-              <span class="radio-tile-desc">Modern format with transparency & smaller size</span>
+              <span class="radio-tile-desc">Modern format with smaller size</span>
             </div>
           </label>
           <label class="radio-tile">
             <input type="radio" name="formatOption" value="avif">
             <div class="radio-tile-text">
               <span class="radio-tile-title">AVIF</span>
-              <span class="radio-tile-desc">Next-gen high efficiency compression</span>
+              <span class="radio-tile-desc">Next-gen high efficiency</span>
             </div>
           </label>
         </div>
@@ -138,12 +197,12 @@
       <!-- Upload View -->
       <section id="uploadView">
         <div class="dropzone" id="dropzone">
-          <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/webp,image/bmp" style="display: none;">
+          <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/webp,image/bmp,image/avif,image/tiff" style="display: none;">
           <div class="dropzone-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
+              <line x1="12" y1="12" x2="12" y2="21"></line>
             </svg>
           </div>
           <div class="dropzone-title">Drop images here to compress</div>
@@ -234,6 +293,138 @@
       </section>
 
     </main>
+  </div>
+
+  <!-- VIEW 2: ANALYTICS & ACTIVITY LOG DASHBOARD -->
+  <div class="analytics-view-container" id="analyticsWorkspace" style="display: none;">
+    
+    <div class="analytics-header">
+      <div class="analytics-title">
+        <h2>Analytics & Activity Log</h2>
+        <p>Real-time audit history of all image compression operations backed by local SQLite</p>
+      </div>
+      <div class="toolbar-right">
+        <button type="button" class="btn-secondary" id="refreshAnalyticsBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          Refresh
+        </button>
+        <button type="button" class="btn-primary" id="exportCsvBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export CSV
+        </button>
+        <button type="button" class="btn-danger" id="clearHistoryBtn">Clear History</button>
+      </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-label">Total Images Compressed</span>
+        <span class="kpi-num" id="kpiTotalOps">0</span>
+        <span class="kpi-subtext" id="kpiUniqueClients">0 unique client sessions</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Total Space Saved</span>
+        <span class="kpi-num" style="color: var(--success-text);" id="kpiTotalSaved">0 MB</span>
+        <span class="kpi-subtext" id="kpiOriginalSize">0 MB original volume</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Average Reduction Ratio</span>
+        <span class="kpi-num" id="kpiAvgPct">0.0%</span>
+        <span class="kpi-subtext">Per image average</span>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-label">Total Compressed Size</span>
+        <span class="kpi-num" id="kpiFinalSize">0 MB</span>
+        <span class="kpi-subtext" id="kpiOverallPct">0.0% overall space reduction</span>
+      </div>
+    </div>
+
+    <!-- Format Distribution Card -->
+    <div class="format-bar-card" id="formatBarCard">
+      <div class="format-bar-header">
+        <span style="font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Format Distribution</span>
+        <span id="formatSummaryText">0 total files</span>
+      </div>
+      <div class="format-bar-visual" id="formatBarVisual">
+        <div class="format-bar-segment" style="width: 100%; background-color: var(--border-base);"></div>
+      </div>
+      <div class="format-bar-legend" id="formatBarLegend">
+        <span style="color: var(--text-faint); font-size: 0.78rem;">No activity recorded yet</span>
+      </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="toolbar-bar">
+      <div class="toolbar-left">
+        <div class="search-input-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="historySearchInput" placeholder="Search activity by filename...">
+        </div>
+
+        <select id="historyFormatFilter" class="select-filter">
+          <option value="ALL">All Formats</option>
+          <option value="PNG">PNG</option>
+          <option value="JPEG">JPEG</option>
+          <option value="WEBP">WebP</option>
+          <option value="AVIF">AVIF</option>
+        </select>
+
+        <select id="historySourceFilter" class="select-filter">
+          <option value="ALL">All Sources</option>
+          <option value="browser_upload">Browser Upload</option>
+          <option value="local_folder">Local Folder</option>
+          <option value="cli">CLI</option>
+        </select>
+      </div>
+
+      <div class="toolbar-right">
+        <span style="font-size: 0.8rem; color: var(--text-faint);" id="historyCountLabel">Showing 0 events</span>
+      </div>
+    </div>
+
+    <!-- Activity Log Table -->
+    <div style="overflow-x: auto;">
+      <table class="files-table">
+        <thead>
+          <tr>
+            <th>Date & Time</th>
+            <th>File Name</th>
+            <th>Source</th>
+            <th>Original</th>
+            <th>Compressed</th>
+            <th>Saved</th>
+            <th>Format</th>
+            <th>Client IP</th>
+            <th style="text-align: right;">Status</th>
+          </tr>
+        </thead>
+        <tbody id="activityTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Empty History State -->
+    <div class="empty-history-box" id="emptyHistoryBox" style="display: none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <div style="font-weight: 600; color: var(--text-main);">No compression activity found</div>
+      <div style="font-size: 0.82rem; color: var(--text-faint);">Use the Compressor tab or run a batch task to see records logged here.</div>
+    </div>
+
   </div>
 
   <!-- Comparison Modal -->

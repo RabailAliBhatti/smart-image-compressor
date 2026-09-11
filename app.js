@@ -1,7 +1,7 @@
 /**
- * Image Compressor - Utility Dashboard Controller
- * Handles local server status, client-side canvas compression,
- * tabular results rendering, numeric slider synchronization, and ZIP exports.
+ * Smart Image Compressor - Application Controller & Analytics Engine
+ * Backed by SQLite database telemetry, multi-format compression,
+ * application profiles, dimensional limits, and CSV export.
  */
 
 (() => {
@@ -13,9 +13,13 @@
   const items = [];
   let isServerConnected = false;
 
-  // Header & Status
+  // Header & Navigation
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
+  const navCompressorBtn = document.getElementById('navCompressorBtn');
+  const navAnalyticsBtn = document.getElementById('navAnalyticsBtn');
+  const compressorWorkspace = document.getElementById('compressorWorkspace');
+  const analyticsWorkspace = document.getElementById('analyticsWorkspace');
 
   // Mode Switcher
   const modeUploadBtn = document.getElementById('modeUploadBtn');
@@ -23,10 +27,13 @@
   const uploadView = document.getElementById('uploadView');
   const localFolderView = document.getElementById('localFolderView');
 
-  // Controls
+  // Profiles & Controls
+  const profileBtns = document.querySelectorAll('.profile-btn');
   const targetSizeInput = document.getElementById('targetSizeInput');
   const targetSizeSlider = document.getElementById('targetSizeSlider');
   const presetBtns = document.querySelectorAll('.preset-btn');
+  const maxWidthInput = document.getElementById('maxWidthInput');
+  const maxHeightInput = document.getElementById('maxHeightInput');
   const formatRadios = document.querySelectorAll('input[name="formatOption"]');
 
   // Dropzone & File Input
@@ -47,7 +54,30 @@
   const downloadAllBtn = document.getElementById('downloadAllBtn');
   const runLocalBatchBtn = document.getElementById('runLocalBatchBtn');
 
-  // Modal
+  // Analytics Elements
+  const kpiTotalOps = document.getElementById('kpiTotalOps');
+  const kpiTotalSaved = document.getElementById('kpiTotalSaved');
+  const kpiOriginalSize = document.getElementById('kpiOriginalSize');
+  const kpiAvgPct = document.getElementById('kpiAvgPct');
+  const kpiFinalSize = document.getElementById('kpiFinalSize');
+  const kpiOverallPct = document.getElementById('kpiOverallPct');
+  const kpiUniqueClients = document.getElementById('kpiUniqueClients');
+  const formatBarVisual = document.getElementById('formatBarVisual');
+  const formatBarLegend = document.getElementById('formatBarLegend');
+  const formatSummaryText = document.getElementById('formatSummaryText');
+
+  const historySearchInput = document.getElementById('historySearchInput');
+  const historyFormatFilter = document.getElementById('historyFormatFilter');
+  const historySourceFilter = document.getElementById('historySourceFilter');
+  const historyCountLabel = document.getElementById('historyCountLabel');
+  const activityTableBody = document.getElementById('activityTableBody');
+  const emptyHistoryBox = document.getElementById('emptyHistoryBox');
+
+  const refreshAnalyticsBtn = document.getElementById('refreshAnalyticsBtn');
+  const exportCsvBtn = document.getElementById('exportCsvBtn');
+  const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+  // Modal Elements
   const compareModal = document.getElementById('compareModal');
   const closeModalBtn = document.getElementById('closeModalBtn');
   const modalTitle = document.getElementById('modalTitle');
@@ -58,6 +88,16 @@
   const modalTargetLabel = document.getElementById('modalTargetLabel');
 
   const toastShelf = document.getElementById('toastShelf');
+
+  // Format Colors for Charts
+  const FORMAT_COLORS = {
+    PNG: '#22c55e',
+    JPEG: '#3b82f6',
+    JPG: '#3b82f6',
+    WEBP: '#06b6d4',
+    AVIF: '#a855f7',
+    OTHER: '#64748b'
+  };
 
   // Format resolver
   function resolveFormat(fileName, fileType, reqFormat) {
@@ -75,6 +115,7 @@
 
   // Utilities
   function formatBytes(bytes) {
+    if (!bytes || isNaN(bytes)) return '0 B';
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
@@ -90,6 +131,23 @@
       setTimeout(() => toast.remove(), 250);
     }, 3200);
   }
+
+  // Top App Navigation Tabs
+  navCompressorBtn.addEventListener('click', () => {
+    navCompressorBtn.classList.add('active');
+    navAnalyticsBtn.classList.remove('active');
+    compressorWorkspace.style.display = 'grid';
+    analyticsWorkspace.style.display = 'none';
+  });
+
+  navAnalyticsBtn.addEventListener('click', () => {
+    navAnalyticsBtn.classList.add('active');
+    navCompressorBtn.classList.remove('active');
+    compressorWorkspace.style.display = 'none';
+    analyticsWorkspace.style.display = 'flex';
+    loadAnalytics();
+    loadHistory();
+  });
 
   // Check Server Status
   async function checkServer() {
@@ -112,7 +170,7 @@
     statusText.textContent = 'In-Browser Mode';
   }
 
-  // Mode Switch
+  // Processing Mode Switch (Upload vs Local Folder)
   modeUploadBtn.addEventListener('click', () => {
     modeUploadBtn.classList.add('active');
     modeFolderBtn.classList.remove('active');
@@ -125,6 +183,28 @@
     modeUploadBtn.classList.remove('active');
     uploadView.style.display = 'none';
     localFolderView.style.display = 'block';
+  });
+
+  // Preset Profile Buttons
+  profileBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      profileBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const size = parseInt(btn.dataset.size, 10);
+      const fmt = btn.dataset.format;
+
+      setTargetSize(size);
+
+      // Update format radio
+      formatRadios.forEach(radio => {
+        if (radio.value === fmt) {
+          radio.checked = true;
+          selectedFormat = fmt;
+        }
+      });
+      showToast(`Applied "${btn.querySelector('span').textContent}" profile`);
+    });
   });
 
   // Size Controls Synchronization
@@ -213,16 +293,8 @@
     const origSize = file.size;
     const fmt = resolveFormat(file.name, file.type, formatChoice);
 
-    // If already under target AND already same format, keep directly
-    const isSameFormat = (
-      (fmt.ext === '.png' && (file.type === 'image/png' || /\.png$/i.test(file.name))) ||
-      (fmt.ext === '.jpg' && (file.type === 'image/jpeg' || /\.jpe?g$/i.test(file.name))) ||
-      (fmt.ext === '.webp' && (file.type === 'image/webp' || /\.webp$/i.test(file.name)))
-    );
-
-    if (isSameFormat && origSize <= targetBytes) {
-      return { blob: file, size: origSize, wasCompressed: false, ext: fmt.ext, mime: fmt.mime };
-    }
+    const maxW = parseInt(maxWidthInput.value, 10) || null;
+    const maxH = parseInt(maxHeightInput.value, 10) || null;
 
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -237,6 +309,30 @@
 
           let currentWidth = img.naturalWidth || img.width;
           let currentHeight = img.naturalHeight || img.height;
+
+          // Apply optional user dimension constraints
+          if (maxW && currentWidth > maxW) {
+            const aspect = currentHeight / currentWidth;
+            currentWidth = maxW;
+            currentHeight = Math.round(maxW * aspect);
+          }
+          if (maxH && currentHeight > maxH) {
+            const aspect = currentWidth / currentHeight;
+            currentHeight = maxH;
+            currentWidth = Math.round(maxH * aspect);
+          }
+
+          // If same format and already smaller and no dimension constraint forced
+          const isSameFormat = (
+            (fmt.ext === '.png' && (file.type === 'image/png' || /\.png$/i.test(file.name))) ||
+            (fmt.ext === '.jpg' && (file.type === 'image/jpeg' || /\.jpe?g$/i.test(file.name))) ||
+            (fmt.ext === '.webp' && (file.type === 'image/webp' || /\.webp$/i.test(file.name)))
+          );
+
+          if (isSameFormat && origSize <= targetBytes && !maxW && !maxH) {
+            resolve({ blob: file, size: origSize, wasCompressed: false, ext: fmt.ext, mime: fmt.mime });
+            return;
+          }
 
           // Helper to draw and export
           const testCompression = (w, h, quality, mime) => {
@@ -260,14 +356,12 @@
           let bestBlob = null;
           let actualMime = fmt.mime;
 
-          // --- 1. PNG Compression ---
+          // 1. PNG Compression
           if (fmt.mime === 'image/png') {
-            // Test full size
             let blob = await testCompression(currentWidth, currentHeight, undefined, 'image/png');
             if (blob && blob.size <= targetBytes) {
               bestBlob = blob;
             } else {
-              // Scale down dimensions until PNG size is <= targetBytes
               let scale = 0.9;
               while (scale > 0.15) {
                 const testW = Math.max(60, Math.round(currentWidth * scale));
@@ -285,17 +379,15 @@
             }
           }
 
-          // --- 2. JPEG / WebP / AVIF Compression ---
+          // 2. JPEG / WebP / AVIF Compression
           else {
-            // Test AVIF capability
             if (fmt.mime === 'image/avif') {
               const testAvif = await testCompression(10, 10, 0.8, 'image/avif');
               if (!testAvif || testAvif.type !== 'image/avif') {
-                actualMime = 'image/webp'; // Fallback to WebP if browser canvas doesn't support AVIF export
+                actualMime = 'image/webp';
               }
             }
 
-            // Binary search quality at full resolution
             let low = 0.25;
             let high = 0.95;
 
@@ -310,7 +402,6 @@
               }
             }
 
-            // Downscale dimensions if lowest quality is still over target
             if (!bestBlob) {
               let scale = 0.88;
               while (scale > 0.15) {
@@ -411,6 +502,22 @@
         item.compUrl = URL.createObjectURL(res.blob);
         item.wasCompressed = res.wasCompressed;
         item.status = 'done';
+
+        // Telemetry Ping to SQLite Backend
+        if (isServerConnected) {
+          fetch('/api/log-activity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              filename: item.name,
+              original_size: item.originalSize,
+              compressed_size: item.compressedSize,
+              format: res.ext.replace('.', '').toUpperCase(),
+              status: 'success'
+            })
+          }).catch(() => {});
+        }
+
       } catch (err) {
         item.status = 'error';
       }
@@ -553,7 +660,7 @@
     }
   });
 
-  // Clear All
+  // Clear All List
   clearAllBtn.addEventListener('click', () => {
     items.forEach(item => {
       if (item.origUrl) URL.revokeObjectURL(item.origUrl);
@@ -615,6 +722,179 @@
         </svg>
         Run Batch Compression on Directory
       `;
+    }
+  });
+
+  // ==========================================================================
+  // Analytics & History Controller
+  // ==========================================================================
+
+  async function loadAnalytics() {
+    if (!isServerConnected) {
+      kpiTotalOps.textContent = 'Offline';
+      kpiTotalSaved.textContent = 'N/A';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/analytics');
+      if (!res.ok) return;
+      const data = await res.json();
+
+      kpiTotalOps.textContent = data.total_compressions.toLocaleString();
+      kpiTotalSaved.textContent = formatBytes(data.total_saved_bytes);
+      kpiOriginalSize.textContent = `${formatBytes(data.total_original_bytes)} original volume`;
+      kpiAvgPct.textContent = `${data.avg_saved_percent}%`;
+      kpiFinalSize.textContent = formatBytes(data.total_compressed_bytes);
+      kpiOverallPct.textContent = `${data.overall_saved_percent}% overall storage saved`;
+      kpiUniqueClients.textContent = `${data.unique_clients} client IP${data.unique_clients === 1 ? '' : 's'}`;
+
+      // Render format distribution bar
+      renderFormatBar(data.format_breakdown, data.total_compressions);
+    } catch (e) {
+      console.error('Failed to load analytics:', e);
+    }
+  }
+
+  function renderFormatBar(breakdown, total) {
+    formatBarVisual.innerHTML = '';
+    formatBarLegend.innerHTML = '';
+
+    if (!breakdown || breakdown.length === 0 || total === 0) {
+      formatSummaryText.textContent = '0 total files';
+      formatBarVisual.innerHTML = '<div class="format-bar-segment" style="width: 100%; background-color: var(--border-base);"></div>';
+      formatBarLegend.innerHTML = '<span style="color: var(--text-faint); font-size: 0.78rem;">No activity recorded yet</span>';
+      return;
+    }
+
+    formatSummaryText.textContent = `${total} total files`;
+
+    breakdown.forEach(item => {
+      const pct = ((item.count / total) * 100).toFixed(1);
+      const color = FORMAT_COLORS[item.format] || FORMAT_COLORS.OTHER;
+
+      // Segment
+      const segment = document.createElement('div');
+      segment.className = 'format-bar-segment';
+      segment.style.width = `${pct}%`;
+      segment.style.backgroundColor = color;
+      segment.title = `${item.format}: ${item.count} (${pct}%)`;
+      formatBarVisual.appendChild(segment);
+
+      // Legend Item
+      const leg = document.createElement('div');
+      leg.className = 'legend-item';
+      leg.innerHTML = `
+        <span class="legend-color" style="background-color: ${color};"></span>
+        <span><strong>${item.format}</strong> ${item.count} (${pct}%)</span>
+      `;
+      formatBarLegend.appendChild(leg);
+    });
+  }
+
+  async function loadHistory() {
+    if (!isServerConnected) {
+      emptyHistoryBox.style.display = 'flex';
+      activityTableBody.innerHTML = '';
+      historyCountLabel.textContent = 'Offline';
+      return;
+    }
+
+    const search = encodeURIComponent(historySearchInput.value.trim());
+    const fmt = encodeURIComponent(historyFormatFilter.value);
+    const src = encodeURIComponent(historySourceFilter.value);
+
+    try {
+      const res = await fetch(`/api/history?search=${search}&format=${fmt}&source=${src}&limit=100`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      activityTableBody.innerHTML = '';
+      historyCountLabel.textContent = `Showing ${data.logs.length} of ${data.total_count} events`;
+
+      if (!data.logs || data.logs.length === 0) {
+        emptyHistoryBox.style.display = 'flex';
+        return;
+      }
+
+      emptyHistoryBox.style.display = 'none';
+
+      data.logs.forEach(log => {
+        const tr = document.createElement('tr');
+
+        const date = new Date(log.timestamp + 'Z');
+        const formattedDate = date.toLocaleString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        const isSuccess = log.status === 'success';
+        const isSkipped = log.status === 'skipped';
+        const badgeClass = isSuccess ? 'badge-saved' : (isSkipped ? 'badge-neutral' : 'badge-error');
+        const badgeText = isSuccess ? `-${log.saved_percent}%` : (isSkipped ? 'Kept As-Is' : 'Error');
+
+        tr.innerHTML = `
+          <td style="color: var(--text-faint); font-size: 0.78rem;">${formattedDate}</td>
+          <td style="font-weight: 500;">${log.filename}</td>
+          <td><span class="badge-tag badge-neutral" style="font-size: 0.7rem;">${log.source}</span></td>
+          <td><span class="mono-num">${formatBytes(log.original_size)}</span></td>
+          <td><span class="mono-num">${formatBytes(log.compressed_size)}</span></td>
+          <td><span class="badge-tag ${badgeClass}">${badgeText}</span></td>
+          <td><span class="mono-num" style="font-weight: 600;">${log.format}</span></td>
+          <td style="color: var(--text-faint); font-family: var(--font-mono); font-size: 0.75rem;">${log.client_ip}</td>
+          <td style="text-align: right;"><span class="badge-tag ${badgeClass}">${log.status}</span></td>
+        `;
+
+        activityTableBody.appendChild(tr);
+      });
+    } catch (e) {
+      console.error('Failed to load history:', e);
+    }
+  }
+
+  // Analytics Search & Filter Events
+  let searchTimeout = null;
+  historySearchInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(loadHistory, 250);
+  });
+
+  historyFormatFilter.addEventListener('change', loadHistory);
+  historySourceFilter.addEventListener('change', loadHistory);
+  refreshAnalyticsBtn.addEventListener('click', () => {
+    loadAnalytics();
+    loadHistory();
+    showToast('Analytics refreshed.');
+  });
+
+  // Export CSV
+  exportCsvBtn.addEventListener('click', () => {
+    if (!isServerConnected) {
+      alert('Local server must be running to export CSV history.');
+      return;
+    }
+    window.location.href = '/api/export-history';
+    showToast('Exporting activity log to CSV...');
+  });
+
+  // Clear History
+  clearHistoryBtn.addEventListener('click', async () => {
+    if (!isServerConnected) return;
+    if (!confirm('Are you sure you want to permanently clear all activity logs in the SQLite database?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/history', { method: 'DELETE' });
+      if (res.ok) {
+        showToast('Activity log cleared.');
+        loadAnalytics();
+        loadHistory();
+      }
+    } catch (e) {
+      showToast('Failed to clear activity log.');
     }
   });
 

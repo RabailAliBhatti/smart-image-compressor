@@ -32,6 +32,7 @@
 
   --warning-text: #f59e0b;
   --danger-text: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.12);
 
   /* Typography & Layout */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -103,6 +104,41 @@ body {
   color: var(--text-faint);
 }
 
+/* Top App Navigation Tabs */
+.header-nav {
+  display: flex;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-dim);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.nav-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.84rem;
+  font-weight: 500;
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.nav-tab-btn.active {
+  background-color: var(--bg-surface-raised);
+  color: var(--text-main);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.nav-tab-btn:hover:not(.active) {
+  color: var(--text-main);
+}
+
 .header-status {
   display: flex;
   align-items: center;
@@ -133,6 +169,16 @@ body {
   align-items: start;
 }
 
+/* Analytics View Container (Full width inside main layout or standalone) */
+.analytics-view-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.8rem;
+}
+
 /* Sidebar / Settings Panel */
 .config-sidebar {
   background-color: var(--bg-surface);
@@ -153,6 +199,52 @@ body {
   text-transform: uppercase;
   color: var(--text-faint);
   margin-bottom: 0.75rem;
+}
+
+/* Preset Profiles */
+.profile-tiles {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.profile-btn {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.75rem;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-btn:hover {
+  border-color: var(--border-base);
+  color: var(--text-main);
+}
+
+.profile-btn.active {
+  background-color: rgba(37, 99, 235, 0.12);
+  border-color: var(--accent-primary);
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.profile-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent-text);
+  background-color: var(--accent-primary);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-xs);
 }
 
 /* Segmented Control (Tabs) */
@@ -285,6 +377,40 @@ body {
   border-color: var(--accent-primary);
   color: #ffffff;
   font-weight: 600;
+}
+
+/* Dimension Constraints Inputs */
+.dim-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.dim-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dim-label {
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+.dim-input {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-dim);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.dim-input:focus {
+  border-color: var(--border-focus);
 }
 
 /* Radio Group */
@@ -424,6 +550,26 @@ body {
 .btn-secondary:hover {
   background-color: var(--bg-hover);
   border-color: var(--border-base);
+}
+
+.btn-danger {
+  background-color: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.12s ease;
+}
+
+.btn-danger:hover {
+  background-color: rgba(239, 68, 68, 0.2);
 }
 
 /* Local Directory Card */
@@ -651,6 +797,12 @@ body {
   border: 1px solid var(--border-dim);
 }
 
+.badge-error {
+  background-color: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
 .mono-num {
   font-family: var(--font-mono);
 }
@@ -678,6 +830,198 @@ body {
   background-color: var(--bg-hover);
   color: var(--text-main);
   border-color: var(--border-base);
+}
+
+/* ==========================================================================
+   Analytics Dashboard Styles
+   ========================================================================== */
+
+.analytics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.analytics-title h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.analytics-title p {
+  font-size: 0.82rem;
+  color: var(--text-faint);
+}
+
+/* Analytics KPI Cards */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.kpi-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.kpi-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.kpi-num {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.kpi-subtext {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Format Distribution Bar */
+.format-bar-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.format-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.format-bar-visual {
+  height: 10px;
+  background-color: var(--bg-input);
+  border-radius: var(--radius-xs);
+  display: flex;
+  overflow: hidden;
+}
+
+.format-bar-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.format-bar-legend {
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend-color {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+
+/* Filter Toolbar */
+.toolbar-bar {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  max-width: 650px;
+}
+
+.search-input-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.75rem;
+  flex: 1;
+}
+
+.search-input-box input {
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.82rem;
+  outline: none;
+  width: 100%;
+}
+
+.select-filter {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-dim);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  outline: none;
+  cursor: pointer;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Empty State */
+.empty-history-box {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  padding: 4rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+}
+
+.empty-history-box svg {
+  color: var(--text-faint);
+  width: 40px;
+  height: 40px;
 }
 
 /* Modal */
@@ -806,7 +1150,7 @@ body {
   .config-sidebar {
     position: static;
   }
-  .metrics-bar {
+  .metrics-bar, .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
   }
   .modal-body {
