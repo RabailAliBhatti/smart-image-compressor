@@ -43,17 +43,37 @@
   const namingPatternInput = document.getElementById('namingPatternInput');
   const namingChips = document.querySelectorAll('.naming-chip');
   const stripExifToggle = document.getElementById('stripExifToggle');
+  const stripExifPill = document.getElementById('stripExifPill');
 
   // Watermark Elements
-  const watermarkToggleHeader = document.getElementById('watermarkToggleHeader');
-  const watermarkStatusBadge = document.getElementById('watermarkStatusBadge');
-  const watermarkPanel = document.getElementById('watermarkPanel');
   const enableWatermarkCheck = document.getElementById('enableWatermarkCheck');
   const watermarkControls = document.getElementById('watermarkControls');
   const watermarkTextInput = document.getElementById('watermarkTextInput');
   const watermarkPositionSelect = document.getElementById('watermarkPositionSelect');
   const watermarkOpacitySlider = document.getElementById('watermarkOpacitySlider');
   const wmOpacityVal = document.getElementById('wmOpacityVal');
+
+  // Sidebar Accordions & Summary Pills
+  const toggleAllAccordionBtn = document.getElementById('toggleAllAccordionBtn');
+  const accordions = document.querySelectorAll('.sidebar-accordion');
+  const pillMode = document.getElementById('pillMode');
+  const pillProfile = document.getElementById('pillProfile');
+  const pillSize = document.getElementById('pillSize');
+  const pillDims = document.getElementById('pillDims');
+  const pillFormat = document.getElementById('pillFormat');
+  const pillNaming = document.getElementById('pillNaming');
+  const pillPrivacy = document.getElementById('pillPrivacy');
+  const pillWatermark = document.getElementById('pillWatermark');
+
+  // Convert Banner & Action Buttons
+  const convertBanner = document.getElementById('convertBanner');
+  const bannerTitle = document.getElementById('bannerTitle');
+  const bannerSubtitle = document.getElementById('bannerSubtitle');
+  const bannerTargetKb = document.getElementById('bannerTargetKb');
+  const bannerConvertBtn = document.getElementById('bannerConvertBtn');
+  const bannerConvertBtnText = document.getElementById('bannerConvertBtnText');
+  const convertAllBtn = document.getElementById('convertAllBtn');
+  const convertAllBtnText = document.getElementById('convertAllBtnText');
 
   // Results & Table
   const resultsSection = document.getElementById('resultsSection');
@@ -148,7 +168,6 @@
     }, 3200);
   }
 
-
   // Check Server Status
   async function checkServer() {
     try {
@@ -170,12 +189,38 @@
     statusText.textContent = 'In-Browser Mode';
   }
 
+  // --- Accordion Setup & Controls ---
+  accordions.forEach(acc => {
+    const header = acc.querySelector('.accordion-header');
+    if (header) {
+      header.addEventListener('click', () => {
+        const isOpen = acc.classList.contains('is-open');
+        acc.classList.toggle('is-open', !isOpen);
+        header.setAttribute('aria-expanded', String(!isOpen));
+      });
+    }
+  });
+
+  if (toggleAllAccordionBtn) {
+    toggleAllAccordionBtn.addEventListener('click', () => {
+      const openCount = document.querySelectorAll('.sidebar-accordion.is-open').length;
+      const shouldOpen = openCount < accordions.length / 2;
+      accordions.forEach(acc => {
+        acc.classList.toggle('is-open', shouldOpen);
+        const header = acc.querySelector('.accordion-header');
+        if (header) header.setAttribute('aria-expanded', String(shouldOpen));
+      });
+      toggleAllAccordionBtn.textContent = shouldOpen ? 'Collapse All' : 'Expand All';
+    });
+  }
+
   // Processing Mode Switch (Upload vs Local Folder)
   modeUploadBtn.addEventListener('click', () => {
     modeUploadBtn.classList.add('active');
     modeFolderBtn.classList.remove('active');
     uploadView.style.display = 'block';
     localFolderView.style.display = 'none';
+    if (pillMode) pillMode.textContent = 'Upload Files';
   });
 
   modeFolderBtn.addEventListener('click', () => {
@@ -183,6 +228,7 @@
     modeUploadBtn.classList.remove('active');
     uploadView.style.display = 'none';
     localFolderView.style.display = 'block';
+    if (pillMode) pillMode.textContent = 'Local Folder';
   });
 
   // Preset Profile Buttons
@@ -201,9 +247,13 @@
         if (radio.value === fmt) {
           radio.checked = true;
           selectedFormat = fmt;
+          if (pillFormat) pillFormat.textContent = fmt.toUpperCase();
         }
       });
-      showToast(`Applied "${btn.querySelector('span').textContent}" profile`);
+
+      const profileName = btn.querySelector('span').textContent;
+      if (pillProfile) pillProfile.textContent = profileName.split(' ')[0];
+      showToast(`Applied "${profileName}" profile`);
     });
   });
 
@@ -224,6 +274,16 @@
         btn.classList.remove('active');
       }
     });
+
+    if (pillSize) pillSize.textContent = `${targetSizeKb} KB`;
+
+    // Update pending rows display
+    items.filter(i => i.status === 'pending').forEach(i => {
+      const el = document.getElementById(`compSize_${i.id}`);
+      if (el) el.textContent = `Ready (≤ ${targetSizeKb} KB)`;
+    });
+
+    updateConvertUI();
   }
 
   targetSizeInput.addEventListener('change', (e) => setTargetSize(e.target.value));
@@ -232,9 +292,25 @@
     btn.addEventListener('click', () => setTargetSize(btn.dataset.size));
   });
 
+  // Dimensional Limits
+  function updateDimsPill() {
+    const w = maxWidthInput.value;
+    const h = maxHeightInput.value;
+    if (pillDims) {
+      if (w || h) pillDims.textContent = `${w || 'auto'}×${h || 'auto'}`;
+      else pillDims.textContent = 'Original';
+    }
+  }
+  maxWidthInput.addEventListener('input', updateDimsPill);
+  maxHeightInput.addEventListener('input', updateDimsPill);
+
+  // Format Selector
   formatRadios.forEach(radio => {
     radio.addEventListener('change', (e) => {
-      if (e.target.checked) selectedFormat = e.target.value;
+      if (e.target.checked) {
+        selectedFormat = e.target.value;
+        if (pillFormat) pillFormat.textContent = selectedFormat === 'auto' ? 'Auto' : selectedFormat.toUpperCase();
+      }
     });
   });
 
@@ -244,24 +320,50 @@
       namingChips.forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
       namingPatternInput.value = chip.dataset.pattern;
+      if (pillNaming) pillNaming.textContent = chip.textContent;
     });
   });
 
+  if (namingPatternInput) {
+    namingPatternInput.addEventListener('input', () => {
+      if (pillNaming) pillNaming.textContent = namingPatternInput.value.slice(0, 14);
+    });
+  }
+
+  // Privacy Shield Toggle
+  if (stripExifToggle) {
+    stripExifToggle.addEventListener('change', () => {
+      const isOn = stripExifToggle.checked;
+      if (pillPrivacy) pillPrivacy.textContent = isOn ? 'Strip ON' : 'Strip OFF';
+      if (stripExifPill) stripExifPill.classList.toggle('active', isOn);
+    });
+  }
+
   // Watermark Accordion & Controls
-  watermarkToggleHeader.addEventListener('click', () => {
-    const isClosed = watermarkPanel.style.display === 'none';
-    watermarkPanel.style.display = isClosed ? 'flex' : 'none';
-  });
+  if (enableWatermarkCheck) {
+    enableWatermarkCheck.addEventListener('change', (e) => {
+      const isEnabled = e.target.checked;
+      watermarkControls.style.display = isEnabled ? 'flex' : 'none';
+      if (pillWatermark) {
+        pillWatermark.textContent = isEnabled ? (watermarkTextInput.value.trim().slice(0, 10) || 'Active') : 'Disabled';
+        pillWatermark.classList.toggle('accent', isEnabled);
+      }
+    });
+  }
 
-  enableWatermarkCheck.addEventListener('change', (e) => {
-    watermarkControls.style.display = e.target.checked ? 'flex' : 'none';
-    watermarkStatusBadge.textContent = e.target.checked ? 'Active' : 'Disabled';
-    watermarkStatusBadge.className = `badge-tag ${e.target.checked ? 'badge-saved' : 'badge-neutral'}`;
-  });
+  if (watermarkTextInput) {
+    watermarkTextInput.addEventListener('input', () => {
+      if (enableWatermarkCheck && enableWatermarkCheck.checked && pillWatermark) {
+        pillWatermark.textContent = watermarkTextInput.value.trim().slice(0, 10) || 'Active';
+      }
+    });
+  }
 
-  watermarkOpacitySlider.addEventListener('input', (e) => {
-    wmOpacityVal.textContent = `${e.target.value}%`;
-  });
+  if (watermarkOpacitySlider) {
+    watermarkOpacitySlider.addEventListener('input', (e) => {
+      if (wmOpacityVal) wmOpacityVal.textContent = `${e.target.value}%`;
+    });
+  }
 
   // Filename Resolver
   function resolveFileName(template, item, index) {
@@ -665,7 +767,7 @@
     });
   }
 
-  // Handle Files Batch
+  // Handle Files Batch (Two-stage: queue first, convert on user action)
   async function handleFiles(files) {
     const validFiles = files.filter(f => f.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp|avif|tiff?)$/i.test(f.name));
     if (validFiles.length === 0) {
@@ -694,23 +796,92 @@
         compUrl: null,
         wasCompressed: false,
         outputExt: '.jpg',
-        status: 'compressing'
+        status: 'pending' // Queued/Pending - user will choose size and click Convert
       };
 
       items.push(item);
       renderRow(item);
-      updateMetrics();
+    }
+
+    updateMetrics();
+    updateConvertUI();
+    showToast(`Added ${validFiles.length} image(s). Adjust size on left, then click Convert.`);
+  }
+
+  // Two-Stage Conversion Orchestration
+  let isConverting = false;
+
+  async function convertSingleItem(item) {
+    if (isConverting) return;
+    item.status = 'compressing';
+    updateRow(item);
+
+    try {
+      const res = await compressImageClientSide(item.originalFile, targetSizeKb, selectedFormat);
+      item.compressedBlob = res.blob;
+      item.compressedSize = res.size;
+      item.outputExt = res.ext;
+      if (item.compUrl) URL.revokeObjectURL(item.compUrl);
+      item.compUrl = URL.createObjectURL(res.blob);
+      item.wasCompressed = res.wasCompressed;
+      item.status = 'done';
+
+      if (isServerConnected) {
+        fetch('/api/log-activity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: item.name,
+            original_size: item.originalSize,
+            compressed_size: item.compressedSize,
+            format: res.ext.replace('.', '').toUpperCase(),
+            status: 'success'
+          })
+        }).catch(() => {});
+      }
+      showToast(`Compressed "${item.name}"`);
+    } catch (err) {
+      item.status = 'error';
+      showToast(`Compression failed for "${item.name}"`);
+    }
+
+    updateRow(item);
+    updateMetrics();
+    updateConvertUI();
+  }
+
+  async function startConversion() {
+    if (isConverting) return;
+    if (items.length === 0) {
+      showToast('No images selected. Please drop or select images first.');
+      return;
+    }
+
+    const hasPending = items.some(i => i.status === 'pending');
+    const queue = hasPending ? items.filter(i => i.status === 'pending') : [...items];
+
+    isConverting = true;
+    if (convertAllBtn) convertAllBtn.disabled = true;
+    if (bannerConvertBtn) bannerConvertBtn.disabled = true;
+
+    for (let i = 0; i < queue.length; i++) {
+      const item = queue[i];
+      if (bannerConvertBtnText) bannerConvertBtnText.textContent = `Converting ${i + 1} of ${queue.length}...`;
+      if (convertAllBtnText) convertAllBtnText.textContent = `(${i + 1}/${queue.length})...`;
+
+      item.status = 'compressing';
+      updateRow(item);
 
       try {
-        const res = await compressImageClientSide(file, targetSizeKb, selectedFormat);
+        const res = await compressImageClientSide(item.originalFile, targetSizeKb, selectedFormat);
         item.compressedBlob = res.blob;
         item.compressedSize = res.size;
         item.outputExt = res.ext;
+        if (item.compUrl) URL.revokeObjectURL(item.compUrl);
         item.compUrl = URL.createObjectURL(res.blob);
         item.wasCompressed = res.wasCompressed;
         item.status = 'done';
 
-        // Telemetry Ping to SQLite Backend
         if (isServerConnected) {
           fetch('/api/log-activity', {
             method: 'POST',
@@ -724,13 +895,57 @@
             })
           }).catch(() => {});
         }
-
       } catch (err) {
+        console.error('Error compressing item:', item.name, err);
         item.status = 'error';
       }
 
       updateRow(item);
       updateMetrics();
+    }
+
+    isConverting = false;
+    if (convertAllBtn) convertAllBtn.disabled = false;
+    if (bannerConvertBtn) bannerConvertBtn.disabled = false;
+    updateConvertUI();
+    showToast(`Successfully converted ${queue.length} image(s)!`);
+  }
+
+  function updateConvertUI() {
+    if (!convertBanner) return;
+
+    if (items.length === 0) {
+      convertBanner.style.display = 'none';
+      if (downloadAllBtn) downloadAllBtn.disabled = true;
+      if (exportPdfBtn) exportPdfBtn.disabled = true;
+      if (convertAllBtn) convertAllBtn.disabled = true;
+      return;
+    }
+
+    convertBanner.style.display = 'flex';
+    const pendingCount = items.filter(i => i.status === 'pending').length;
+    const doneCount = items.filter(i => i.status === 'done').length;
+
+    if (bannerTargetKb) bannerTargetKb.textContent = `${targetSizeKb} KB`;
+
+    if (pendingCount > 0) {
+      if (bannerTitle) bannerTitle.textContent = `${pendingCount} Image${pendingCount > 1 ? 's' : ''} Ready to Convert`;
+      if (bannerSubtitle) bannerSubtitle.innerHTML = `Target size: <span class="badge-size-target">${targetSizeKb} KB</span>. Adjust size on the left, then click Convert.`;
+      if (bannerConvertBtnText) bannerConvertBtnText.textContent = `Convert All (${targetSizeKb} KB)`;
+      if (convertAllBtnText) convertAllBtnText.textContent = `Convert Images (${pendingCount})`;
+      if (convertAllBtn) convertAllBtn.disabled = false;
+      if (bannerConvertBtn) bannerConvertBtn.disabled = false;
+      if (downloadAllBtn) downloadAllBtn.disabled = doneCount === 0;
+      if (exportPdfBtn) exportPdfBtn.disabled = doneCount === 0;
+    } else if (doneCount > 0) {
+      if (bannerTitle) bannerTitle.textContent = `All ${doneCount} Image${doneCount > 1 ? 's' : ''} Converted`;
+      if (bannerSubtitle) bannerSubtitle.innerHTML = `Target size: <span class="badge-size-target">${targetSizeKb} KB</span>. Files ready for download, or click below to re-convert with new settings.`;
+      if (bannerConvertBtnText) bannerConvertBtnText.textContent = `Re-convert All (${targetSizeKb} KB)`;
+      if (convertAllBtnText) convertAllBtnText.textContent = 'Re-convert All';
+      if (convertAllBtn) convertAllBtn.disabled = false;
+      if (bannerConvertBtn) bannerConvertBtn.disabled = false;
+      if (downloadAllBtn) downloadAllBtn.disabled = false;
+      if (exportPdfBtn) exportPdfBtn.disabled = false;
     }
   }
 
@@ -750,7 +965,7 @@
     tr.innerHTML = `
       <td>
         <div class="cell-file">
-          <img class="table-thumb" id="thumb_${item.id}" src="${item.origUrl}" alt="Preview" title="Click to compare">
+          <img class="table-thumb" id="thumb_${item.id}" src="${item.origUrl}" alt="Preview" title="Thumbnail">
           <div class="file-name-wrapper">
             <div style="display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap;">
               ${folderBadge}
@@ -761,10 +976,15 @@
         </div>
       </td>
       <td><span class="mono-num">${formatBytes(item.originalSize)}</span></td>
-      <td><span class="mono-num" id="compSize_${item.id}" style="color: var(--text-faint);">Processing...</span></td>
-      <td><span class="badge-tag badge-neutral" id="badge_${item.id}">Queued</span></td>
+      <td><span class="mono-num" id="compSize_${item.id}" style="color: var(--text-faint); font-size: 0.8rem;">Ready (&le; ${targetSizeKb} KB)</span></td>
+      <td><span class="badge-tag badge-neutral" id="badge_${item.id}">Ready to Convert</span></td>
       <td>
         <div class="row-actions" style="justify-content: flex-end;">
+          <button type="button" class="btn-table-icon" id="rowConvertBtn_${item.id}" title="Convert this image now" style="color: var(--accent-text);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
           <button type="button" class="btn-table-icon" id="prevBtn_${item.id}" title="Preview Comparison" style="display: none;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -783,15 +1003,23 @@
     `;
 
     tableBody.appendChild(tr);
+
+    const rowConvertBtn = document.getElementById(`rowConvertBtn_${item.id}`);
+    if (rowConvertBtn) {
+      rowConvertBtn.addEventListener('click', () => convertSingleItem(item));
+    }
   }
 
   // Update Table Row
   function updateRow(item) {
     const compSizeEl = document.getElementById(`compSize_${item.id}`);
     const badgeEl = document.getElementById(`badge_${item.id}`);
+    const rowConvertBtn = document.getElementById(`rowConvertBtn_${item.id}`);
     const prevBtn = document.getElementById(`prevBtn_${item.id}`);
     const dlBtn = document.getElementById(`dlBtn_${item.id}`);
     const thumb = document.getElementById(`thumb_${item.id}`);
+
+    if (!compSizeEl || !badgeEl) return;
 
     if (item.status === 'done') {
       compSizeEl.textContent = formatBytes(item.compressedSize);
@@ -807,17 +1035,45 @@
         badgeEl.textContent = `Already < ${targetSizeKb} KB`;
       }
 
-      prevBtn.style.display = 'inline-flex';
-      dlBtn.style.display = 'inline-flex';
+      if (rowConvertBtn) rowConvertBtn.style.display = 'none';
+      if (prevBtn) prevBtn.style.display = 'inline-flex';
+      if (dlBtn) dlBtn.style.display = 'inline-flex';
 
-      prevBtn.onclick = () => openCompareModal(item);
-      thumb.onclick = () => openCompareModal(item);
-      dlBtn.onclick = () => downloadSingle(item);
+      if (prevBtn) prevBtn.onclick = () => openCompareModal(item);
+      if (thumb) {
+        thumb.onclick = () => openCompareModal(item);
+        thumb.style.cursor = 'pointer';
+      }
+      if (dlBtn) dlBtn.onclick = () => downloadSingle(item);
+
+    } else if (item.status === 'compressing') {
+      compSizeEl.textContent = 'Compressing...';
+      compSizeEl.style.color = 'var(--accent-text)';
+      badgeEl.className = 'badge-tag badge-neutral';
+      badgeEl.textContent = 'In Progress...';
+      if (rowConvertBtn) rowConvertBtn.style.display = 'none';
+      if (prevBtn) prevBtn.style.display = 'none';
+      if (dlBtn) dlBtn.style.display = 'none';
+
+    } else if (item.status === 'pending') {
+      compSizeEl.textContent = `Ready (≤ ${targetSizeKb} KB)`;
+      compSizeEl.style.color = 'var(--text-faint)';
+      badgeEl.className = 'badge-tag badge-neutral';
+      badgeEl.textContent = 'Ready to Convert';
+      if (rowConvertBtn) rowConvertBtn.style.display = 'inline-flex';
+      if (prevBtn) prevBtn.style.display = 'none';
+      if (dlBtn) dlBtn.style.display = 'none';
+      if (thumb) {
+        thumb.onclick = null;
+        thumb.style.cursor = 'default';
+      }
+
     } else if (item.status === 'error') {
       compSizeEl.textContent = 'Error';
       compSizeEl.style.color = 'var(--danger-text)';
-      badgeEl.className = 'badge-tag badge-neutral';
+      badgeEl.className = 'badge-tag badge-error';
       badgeEl.textContent = 'Failed';
+      if (rowConvertBtn) rowConvertBtn.style.display = 'inline-flex';
     }
   }
 
@@ -827,13 +1083,46 @@
     statCount.textContent = items.length;
 
     const totalOrig = items.reduce((sum, i) => sum + (i.originalSize || 0), 0);
-    const totalComp = items.reduce((sum, i) => sum + (i.compressedSize || i.originalSize || 0), 0);
-    const savedBytes = totalOrig - totalComp;
-    const savedPct = totalOrig > 0 ? ((savedBytes / totalOrig) * 100).toFixed(1) : 0;
+    const doneItems = items.filter(i => i.status === 'done');
 
     statOrigSize.textContent = formatBytes(totalOrig);
-    statCompSize.textContent = formatBytes(totalComp);
-    statSaved.textContent = `${savedPct}% (${formatBytes(Math.max(0, savedBytes))})`;
+
+    if (doneItems.length > 0) {
+      const totalComp = doneItems.reduce((sum, i) => sum + (i.compressedSize || 0), 0);
+      const totalOrigDone = doneItems.reduce((sum, i) => sum + (i.originalSize || 0), 0);
+      const savedBytes = totalOrigDone - totalComp;
+      const savedPct = totalOrigDone > 0 ? ((savedBytes / totalOrigDone) * 100).toFixed(1) : 0;
+
+      statCompSize.textContent = formatBytes(totalComp);
+      statSaved.textContent = `${savedPct}% (${formatBytes(Math.max(0, savedBytes))})`;
+    } else {
+      statCompSize.textContent = `Pending (≤ ${targetSizeKb} KB)`;
+      statSaved.textContent = `0%`;
+    }
+  }
+
+  // Wire Convert Buttons
+  if (convertAllBtn) {
+    convertAllBtn.addEventListener('click', () => startConversion());
+  }
+  if (bannerConvertBtn) {
+    bannerConvertBtn.addEventListener('click', () => startConversion());
+  }
+
+  // Clear All List
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener('click', () => {
+      items.forEach(i => {
+        if (i.origUrl) URL.revokeObjectURL(i.origUrl);
+        if (i.compUrl) URL.revokeObjectURL(i.compUrl);
+      });
+      items.length = 0;
+      tableBody.innerHTML = '';
+      resultsSection.style.display = 'none';
+      updateMetrics();
+      updateConvertUI();
+      showToast('Files cleared.');
+    });
   }
 
   // Single File Download
