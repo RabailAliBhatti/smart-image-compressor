@@ -383,34 +383,62 @@ body {
 .dim-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  width: 100%;
 }
 
 .dim-box {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
+  min-width: 0; /* Prevents grid column blowout from intrinsic input width */
 }
 
 .dim-label {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--text-faint);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dim-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   background-color: var(--bg-input);
   border: 1px solid var(--border-dim);
   color: var(--text-main);
   font-family: var(--font-mono);
-  font-size: 0.85rem;
-  padding: 0.45rem 0.6rem;
+  font-size: 0.82rem;
+  padding: 0.5rem 0.65rem;
   border-radius: var(--radius-sm);
   outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.dim-input::placeholder {
+  color: var(--text-faint);
+  opacity: 0.7;
 }
 
 .dim-input:focus {
   border-color: var(--border-focus);
+}
+
+/* Remove number input spinner steppers for clean minimalist appearance */
+.dim-input::-webkit-outer-spin-button,
+.dim-input::-webkit-inner-spin-button,
+.num-input::-webkit-outer-spin-button,
+.num-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.dim-input[type="number"],
+.num-input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 /* Radio Group */
