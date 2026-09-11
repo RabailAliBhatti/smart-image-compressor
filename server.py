@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Lightweight Local Web Server for Image Compressor Dashboard & Analytics API.
+Lightweight Local Web Server for Image Compressor & Password-Protected Admin API.
 Integrated with SQLite database for tracking complete activity history.
 Zero external dependencies (uses Python standard library).
 """
@@ -9,6 +9,7 @@ import os
 import sys
 import json
 import socket
+import secrets
 import webbrowser
 import threading
 from urllib.parse import urlparse, parse_qs
@@ -23,48 +24,82 @@ BASE_DIR = Path(__file__).resolve().parent
 INPUT_DIR = BASE_DIR / "images"
 OUTPUT_DIR = BASE_DIR / "compressed_images"
 
+# Admin Authentication Configuration
+# Default password is 'admin123', can be overridden via ADMIN_PASSWORD environment variable
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
+ACTIVE_ADMIN_TOKENS = set()
+
+def verify_admin_auth(handler) -> bool:
+    """Check if request has a valid admin session token."""
+    # Check X-Admin-Token header
+    token = handler.headers.get("X-Admin-Token")
+    if token and token in ACTIVE_ADMIN_TOKENS:
+        return True
+
+    # Check Authorization: Bearer <token>
+    auth_header = handler.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+        if token in ACTIVE_ADMIN_TOKENS:
+            return True
+
+    # Check query param ?token= (useful for CSV export download link)
+    parsed = urlparse(handler.path)
+    query = parse_qs(parsed.query)
+    q_token = query.get("token", [None])[0]
+    if q_token and q_token in ACTIVE_ADMIN_TOKENS:
+        return True
+
+    return False
+
 class CompressorRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(BASE_DIR), **kwargs)
+
+    def send_json(self, data, status=200):
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode("utf-8"))
+
+    def send_unauthorized(self):
+        self.send_json({"error": "Unauthorized. Admin password required."}, status=401)
 
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path
         query = parse_qs(parsed.query)
 
-        # 1. Server Status
+        # 1. Public Server Status
         if path == "/api/status":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Cache-Control", "no-cache")
-            self.end_headers()
-
             image_count = 0
             if INPUT_DIR.exists():
                 image_count = len([f for f in INPUT_DIR.iterdir() if f.is_file() and f.suffix.lower() in SUPPORTED_EXTENSIONS])
 
-            data = {
+            self.send_json({
                 "status": "ok",
                 "input_dir": str(INPUT_DIR.resolve()),
                 "output_dir": str(OUTPUT_DIR.resolve()),
                 "image_count": image_count,
-            }
-            self.wfile.write(json.dumps(data).encode("utf-8"))
+            })
             return
 
-        # 2. Analytics Summary
+        # 2. Protected Analytics Summary (Requires Admin)
         if path == "/api/analytics":
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Cache-Control", "no-cache")
-            self.end_headers()
-
+            if not verify_admin_auth(self):
+                self.send_unauthorized()
+                return
             analytics = db.get_analytics()
-            self.wfile.write(json.dumps(analytics).encode("utf-8"))
+            self.send_json(analytics)
             return
 
-        # 3. Activity History (Searchable & Filterable)
+        # 3. Protected Activity History (Requires Admin)
         if path == "/api/history":
+            if not verify_admin_auth(self):
+                self.send_unauthorized()
+                return
+
             search = query.get("search", [None])[0]
             format_filter = query.get("format", [None])[0]
             source_filter = query.get("source", [None])[0]
@@ -79,21 +114,20 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
                 offset=offset
             )
 
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Cache-Control", "no-cache")
-            self.end_headers()
-
-            self.wfile.write(json.dumps({
+            self.send_json({
                 "logs": logs,
                 "total_count": total_count,
                 "limit": limit,
                 "offset": offset
-            }).encode("utf-8"))
+            })
             return
 
-        # 4. Export CSV
+        # 4. Protected Export CSV (Requires Admin)
         if path == "/api/export-history":
+            if not verify_admin_auth(self):
+                self.send_unauthorized()
+                return
+
             csv_content = db.export_csv()
             self.send_response(200)
             self.send_header("Content-Type", "text/csv; charset=utf-8")
@@ -118,17 +152,39 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
         client_ip = self.client_address[0]
         user_agent = self.headers.get("User-Agent", "")
 
-        # 1. Batch Local Folder Compression
+        # 1. Admin Login Endpoint
+        if path == "/api/admin/login":
+            entered_password = payload.get("password", "")
+            if entered_password == ADMIN_PASSWORD:
+                token = secrets.token_hex(24)
+                ACTIVE_ADMIN_TOKENS.add(token)
+                self.send_json({"success": True, "token": token})
+            else:
+                self.send_json({"error": "Invalid admin password."}, status=401)
+            return
+
+        # 2. Admin Logout Endpoint
+        if path == "/api/admin/logout":
+            token = self.headers.get("X-Admin-Token") or payload.get("token")
+            if token and token in ACTIVE_ADMIN_TOKENS:
+                ACTIVE_ADMIN_TOKENS.remove(token)
+            self.send_json({"success": True})
+            return
+
+        # 3. Admin Token Verify Endpoint
+        if path == "/api/admin/verify":
+            is_valid = verify_admin_auth(self)
+            self.send_json({"valid": is_valid}, status=200 if is_valid else 401)
+            return
+
+        # 4. Public Batch Local Folder Compression
         if path == "/api/compress-folder":
             target_kb = float(payload.get("target_kb", 500.0))
             format_choice = str(payload.get("format", "auto")).lower()
             target_bytes = int(target_kb * 1000)
 
             if not INPUT_DIR.exists():
-                self.send_response(404)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": f"Folder {INPUT_DIR} does not exist"}).encode("utf-8"))
+                self.send_json({"error": f"Folder {INPUT_DIR} does not exist"}, status=404)
                 return
 
             OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -196,11 +252,7 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
             saved_bytes = total_orig - total_final
             saved_pct = (saved_bytes / total_orig) * 100 if total_orig > 0 else 0
 
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-
-            resp = {
+            self.send_json({
                 "success": True,
                 "total_images": len(image_files),
                 "compressed_count": compressed_count,
@@ -210,11 +262,10 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
                 "saved_formatted": format_size(saved_bytes),
                 "saved_pct": round(saved_pct, 1),
                 "output_dir": str(OUTPUT_DIR.resolve())
-            }
-            self.wfile.write(json.dumps(resp).encode("utf-8"))
+            })
             return
 
-        # 2. Client-Side Browser Compression Telemetry Logger
+        # 5. Public Telemetry Logging (so all compressions are recorded in SQLite)
         if path == "/api/log-activity":
             filename = payload.get("filename", "unknown")
             orig_sz = int(payload.get("original_size", 0))
@@ -237,10 +288,7 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
                 status=status
             )
 
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"success": True, "log_id": log_id}).encode("utf-8"))
+            self.send_json({"success": True, "log_id": log_id})
             return
 
         self.send_response(404)
@@ -248,12 +296,14 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
 
     def do_DELETE(self):
         parsed = urlparse(self.path)
+        # Protected Clear History (Requires Admin)
         if parsed.path == "/api/history":
+            if not verify_admin_auth(self):
+                self.send_unauthorized()
+                return
+
             deleted = db.clear_history()
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"success": True, "deleted": deleted}).encode("utf-8"))
+            self.send_json({"success": True, "deleted": deleted})
             return
 
         self.send_response(404)
@@ -277,12 +327,14 @@ def run_server(port: int = 5000, open_browser: bool = True):
     httpd = HTTPServer(server_address, CompressorRequestHandler)
     url = f"http://localhost:{port}"
 
-    print("=" * 60)
-    print("  SMART IMAGE COMPRESSOR & ANALYTICS SERVER")
-    print(f"  Database : {db.DB_PATH.resolve()}")
-    print(f"  Dashboard: {url}")
+    print("=" * 65)
+    print("  SMART IMAGE COMPRESSOR & SECURE ADMIN SERVER")
+    print(f"  Public Dashboard: {url}")
+    print(f"  Admin Portal    : {url}/admin.html")
+    print(f"  Default Password: {ADMIN_PASSWORD}")
+    print(f"  Database        : {db.DB_PATH.resolve()}")
     print("  Press Ctrl+C to stop the server.")
-    print("=" * 60)
+    print("=" * 65)
 
     if open_browser:
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
