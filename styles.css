@@ -161,7 +161,7 @@ body {
 .nav-tab-btn.active {
   background-color: var(--bg-surface-raised);
   color: var(--text-main);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-dim);
 }
 
 .nav-tab-btn:hover:not(.active) {
@@ -317,7 +317,7 @@ body {
 .segment-btn.active {
   background-color: var(--bg-surface-raised);
   color: var(--text-main);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-dim);
 }
 
 .segment-btn:hover:not(.active) {
@@ -380,8 +380,8 @@ body {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--text-main);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  background: var(--accent-primary);
+  border: 2px solid var(--bg-surface);
   cursor: pointer;
   transition: transform 0.1s ease;
 }
@@ -592,8 +592,8 @@ body {
 }
 
 .btn-primary {
-  background-color: var(--text-main);
-  color: #090a0f;
+  background-color: var(--accent-primary);
+  color: #ffffff;
   border: none;
   font-family: inherit;
   font-size: 0.85rem;
@@ -608,7 +608,8 @@ body {
 }
 
 .btn-primary:hover {
-  background-color: #e2e8f0;
+  background-color: var(--accent-primary-hover);
+  color: #ffffff;
 }
 
 .btn-secondary {
@@ -824,7 +825,7 @@ body {
 }
 
 .files-table tr:hover td {
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: var(--bg-hover);
 }
 
 .cell-file {
@@ -1584,7 +1585,7 @@ body {
   background-color: var(--bg-surface);
   border-radius: var(--radius-md);
   overflow: hidden;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease;
 }
 
 .sidebar-accordion:hover {
@@ -1592,8 +1593,8 @@ body {
 }
 
 .sidebar-accordion.is-open {
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  border-color: var(--border-base);
+  box-shadow: none;
 }
 
 .accordion-header {
@@ -1633,7 +1634,7 @@ body {
 }
 
 .sidebar-accordion.is-open .accordion-num {
-  color: var(--accent-text);
+  color: var(--accent-primary);
 }
 
 .accordion-title {
@@ -1673,9 +1674,9 @@ body {
 }
 
 .accordion-pill.accent {
-  color: #93c5fd;
+  color: var(--accent-primary);
   border-color: rgba(37, 99, 235, 0.35);
-  background-color: rgba(37, 99, 235, 0.12);
+  background-color: rgba(37, 99, 235, 0.08);
   font-weight: 600;
 }
 
@@ -1746,16 +1747,16 @@ body {
 }
 
 .preset-chip.active {
-  background-color: rgba(37, 99, 235, 0.18);
+  background-color: rgba(37, 99, 235, 0.12);
   border-color: var(--accent-primary);
-  color: #93c5fd;
+  color: var(--accent-primary);
   font-weight: 600;
 }
 
 /* --- CONVERT ACTION BANNER --- */
 .convert-banner {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(18, 21, 30, 0.95) 100%);
-  border: 1px solid rgba(37, 99, 235, 0.35);
+  background-color: var(--bg-surface-raised);
+  border: 1px solid var(--border-base);
   border-radius: var(--radius-md);
   padding: 0.9rem 1.25rem;
   display: flex;
@@ -1763,7 +1764,7 @@ body {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.25rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: none;
   flex-wrap: wrap;
 }
 
@@ -1817,16 +1818,16 @@ body {
 .badge-size-target {
   font-family: var(--font-mono);
   font-weight: 600;
-  color: #93c5fd;
-  background-color: rgba(37, 99, 235, 0.2);
+  color: var(--accent-primary);
+  background-color: rgba(37, 99, 235, 0.12);
   padding: 0.1rem 0.35rem;
   border-radius: var(--radius-xs);
 }
 
 .btn-convert-execute {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background-color: var(--accent-primary);
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: none;
   border-radius: var(--radius-sm);
   padding: 0.6rem 1.25rem;
   font-family: inherit;
@@ -1836,13 +1837,14 @@ body {
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
-  transition: all 0.15s ease;
+  box-shadow: none;
+  transition: background-color 0.15s ease;
 }
 
 .btn-convert-execute:hover {
-  background: linear-gradient(135deg, #1d4ed8, #1e40af);
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.55);
+  background-color: var(--accent-primary-hover);
+  color: #ffffff;
+  box-shadow: none;
   transform: translateY(-1px);
 }
 
