@@ -160,13 +160,21 @@ body {
 
 /* Main Layout Grid */
 .main-layout {
-  max-width: 1400px;
+  max-width: 1480px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 2.25rem 2rem;
   display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 2rem;
+  grid-template-columns: 400px 1fr;
+  gap: 2.25rem;
   align-items: start;
+}
+
+@media (max-width: 1120px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+    padding: 1.25rem;
+  }
 }
 
 /* Analytics View Container (Full width inside main layout or standalone) */
@@ -184,10 +192,10 @@ body {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-dim);
   border-radius: var(--radius-md);
-  padding: 1.5rem;
+  padding: 1.4rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 1.8rem;
+  gap: 0.9rem;
   position: sticky;
   top: 88px;
 }
@@ -205,18 +213,18 @@ body {
 .profile-tiles {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.4rem;
-  margin-bottom: 0.5rem;
+  gap: 0.55rem;
+  margin-top: 0.25rem;
 }
 
 .profile-btn {
   background-color: var(--bg-input);
   border: 1px solid var(--border-dim);
   border-radius: var(--radius-sm);
-  padding: 0.55rem 0.75rem;
+  padding: 0.7rem 0.95rem;
   color: var(--text-muted);
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
@@ -229,6 +237,7 @@ body {
 .profile-btn:hover {
   border-color: var(--border-base);
   color: var(--text-main);
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .profile-btn.active {
@@ -243,7 +252,7 @@ body {
   font-size: 0.72rem;
   color: var(--accent-text);
   background-color: var(--accent-primary);
-  padding: 0.1rem 0.4rem;
+  padding: 0.15rem 0.5rem;
   border-radius: var(--radius-xs);
 }
 
@@ -252,8 +261,10 @@ body {
   display: flex;
   background-color: var(--bg-input);
   border: 1px solid var(--border-dim);
-  padding: 3px;
+  padding: 4px;
   border-radius: var(--radius-sm);
+  gap: 4px;
+  margin-top: 0.25rem;
 }
 
 .segment-btn {
@@ -264,14 +275,14 @@ body {
   font-family: inherit;
   font-size: 0.82rem;
   font-weight: 500;
-  padding: 0.5rem 0.4rem;
+  padding: 0.65rem 0.75rem;
   border-radius: var(--radius-xs);
   cursor: pointer;
   transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 
 .segment-btn.active {
@@ -291,12 +302,15 @@ body {
   background-color: var(--bg-input);
   border: 1px solid var(--border-base);
   border-radius: var(--radius-sm);
-  padding: 0 0.75rem;
-  transition: border-color 0.15s ease;
+  padding: 0 1rem;
+  height: 48px;
+  margin-top: 0.25rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .input-with-unit:focus-within {
-  border-color: var(--border-focus);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
 .num-input {
@@ -304,7 +318,7 @@ body {
   border: none;
   color: var(--text-main);
   font-family: var(--font-mono);
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 600;
   padding: 0.6rem 0;
   width: 100%;
@@ -312,32 +326,33 @@ body {
 }
 
 .unit-label {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--text-muted);
 }
 
 .range-slider-wrapper {
-  margin: 0.75rem 0 0.5rem;
+  margin: 1.15rem 0 1rem;
 }
 
 .range-slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 4px;
+  height: 5px;
   background: var(--border-base);
-  border-radius: 2px;
+  border-radius: 3px;
   outline: none;
 }
 
 .range-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--text-main);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   cursor: pointer;
   transition: transform 0.1s ease;
 }
@@ -349,33 +364,35 @@ body {
 /* Preset Buttons Grid */
 .preset-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.4rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.55rem;
+  margin-top: 0.35rem;
 }
 
 .preset-btn {
   background-color: var(--bg-input);
   border: 1px solid var(--border-dim);
+  border-radius: var(--radius-xs);
+  padding: 0.65rem 0.45rem;
   color: var(--text-muted);
-  font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 500;
-  padding: 0.45rem 0.5rem;
-  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.12s ease;
   text-align: center;
+  transition: all 0.15s ease;
 }
 
 .preset-btn:hover {
   border-color: var(--border-base);
   color: var(--text-main);
+  background-color: rgba(255, 255, 255, 0.04);
 }
 
 .preset-btn.active {
-  background-color: rgba(37, 99, 235, 0.15);
+  background-color: rgba(37, 99, 235, 0.2);
   border-color: var(--accent-primary);
-  color: #ffffff;
+  color: #93c5fd;
   font-weight: 600;
 }
 
@@ -383,19 +400,20 @@ body {
 .dim-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
+  gap: 0.75rem;
   width: 100%;
+  margin-top: 0.35rem;
 }
 
 .dim-box {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.45rem;
   min-width: 0; /* Prevents grid column blowout from intrinsic input width */
 }
 
 .dim-label {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   color: var(--text-faint);
   font-weight: 500;
   white-space: nowrap;
@@ -411,11 +429,11 @@ body {
   border: 1px solid var(--border-dim);
   color: var(--text-main);
   font-family: var(--font-mono);
-  font-size: 0.82rem;
-  padding: 0.5rem 0.65rem;
+  font-size: 0.84rem;
+  padding: 0.65rem 0.85rem;
   border-radius: var(--radius-sm);
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .dim-input::placeholder {
@@ -424,7 +442,8 @@ body {
 }
 
 .dim-input:focus {
-  border-color: var(--border-focus);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
 /* Remove number input spinner steppers for clean minimalist appearance */
@@ -445,45 +464,49 @@ body {
 .radio-tile-group {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
 }
 
 .radio-tile {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.85rem;
   background-color: var(--bg-input);
   border: 1px solid var(--border-dim);
   border-radius: var(--radius-sm);
-  padding: 0.65rem 0.85rem;
+  padding: 0.75rem 1rem;
   cursor: pointer;
-  transition: border-color 0.12s ease;
+  transition: all 0.15s ease;
 }
 
 .radio-tile:hover {
   border-color: var(--border-base);
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .radio-tile input[type="radio"] {
   accent-color: var(--accent-primary);
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
 }
 
 .radio-tile-text {
   display: flex;
   flex-direction: column;
+  gap: 0.15rem;
 }
 
 .radio-tile-title {
   font-size: 0.84rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-main);
 }
 
 .radio-tile-desc {
   font-size: 0.74rem;
   color: var(--text-faint);
+  line-height: 1.35;
 }
 
 /* Work Area (Right Column) */
@@ -1462,12 +1485,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.65rem 0.85rem;
+  padding: 0.85rem 1.1rem;
   background-color: var(--bg-input);
   border: 1px solid var(--border-dim);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
+  margin-top: 0.25rem;
 }
 
 .toggle-pill:hover {
@@ -1477,12 +1501,12 @@ body {
 
 .toggle-pill.active {
   border-color: rgba(34, 197, 94, 0.4);
-  background-color: rgba(34, 197, 94, 0.06);
+  background-color: rgba(34, 197, 94, 0.08);
 }
 
 .toggle-pill input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 17px;
+  height: 17px;
   accent-color: var(--accent-primary);
   cursor: pointer;
 }
@@ -1492,15 +1516,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 0.5rem;
+  padding: 0.2rem 0.25rem 0.75rem;
   border-bottom: 1px solid var(--border-dim);
+  margin-bottom: 0.2rem;
 }
 
 .sidebar-main-title {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
+  gap: 0.6rem;
+  font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1511,9 +1536,9 @@ body {
   background: none;
   border: 1px solid var(--border-dim);
   border-radius: var(--radius-xs);
-  padding: 0.2rem 0.5rem;
+  padding: 0.25rem 0.65rem;
   color: var(--text-faint);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.12s ease;
@@ -1539,7 +1564,7 @@ body {
 
 .sidebar-accordion.is-open {
   border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .accordion-header {
@@ -1547,7 +1572,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 0.85rem;
+  padding: 0.85rem 1.1rem;
   background: none;
   border: none;
   color: inherit;
@@ -1565,15 +1590,17 @@ body {
 .accordion-title-wrap {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.65rem;
+  min-width: 0;
 }
 
 .accordion-num {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--text-faint);
   letter-spacing: 0.04em;
+  flex-shrink: 0;
 }
 
 .sidebar-accordion.is-open .accordion-num {
@@ -1581,12 +1608,13 @@ body {
 }
 
 .accordion-title {
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-muted);
   transition: color 0.12s ease;
+  white-space: nowrap;
 }
 
 .sidebar-accordion.is-open .accordion-title {
@@ -1596,19 +1624,20 @@ body {
 .accordion-meta {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  flex-shrink: 0;
 }
 
 .accordion-pill {
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 500;
   color: var(--text-faint);
   background-color: var(--bg-input);
   border: 1px solid var(--border-dim);
-  padding: 0.12rem 0.45rem;
+  padding: 0.22rem 0.6rem;
   border-radius: var(--radius-xs);
-  max-width: 120px;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1633,7 +1662,7 @@ body {
 }
 
 .accordion-body {
-  padding: 0 0.85rem 0.85rem 0.85rem;
+  padding: 0.4rem 1.1rem 1.25rem 1.1rem;
   display: none;
 }
 
@@ -1649,8 +1678,8 @@ body {
   border-radius: var(--radius-sm);
   color: var(--text-main);
   font-family: var(--font-mono);
-  font-size: 0.8rem;
-  padding: 0.55rem 0.75rem;
+  font-size: 0.82rem;
+  padding: 0.65rem 0.85rem;
   outline: none;
   box-sizing: border-box;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -1664,18 +1693,18 @@ body {
 .preset-chips-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.4rem;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
 }
 
 .preset-chip {
   background-color: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-dim);
   border-radius: var(--radius-xs);
-  padding: 0.25rem 0.55rem;
+  padding: 0.32rem 0.65rem;
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   cursor: pointer;
   user-select: none;
   transition: all 0.12s ease;
