@@ -65,6 +65,26 @@ py server.py
 | **Side-by-Side Comparison** | Click any thumbnail to inspect original vs. compressed images with live size metrics before downloading. |
 | **One-Click Batch ZIP** | Download all compressed files in a single organized `.zip` archive. |
 | **Local Disk Processing** | Switch to the "Local Folder" tab to process your local `./images` directory into `./compressed_images` with 1 click. |
+| **🔒 Protected Admin Portal** | Dedicated analytics console (`admin.html`) locked behind a master password with live SQLite audit logs and CSV export. |
+
+---
+
+## 🔒 Admin Portal & Analytics Security
+
+The Analytics & Activity Log screen is completely separated from the public compression tool and protected by admin authentication:
+
+- **Admin URL**: `http://localhost:5000/admin.html`
+- **Default Master Password**: `admin123`
+- **Custom Password**: Set via environment variable before running `server.py`:
+  ```bash
+  # Windows PowerShell:
+  $env:ADMIN_PASSWORD="YourSecurePassword"
+  py server.py
+
+  # macOS / Linux:
+  ADMIN_PASSWORD="YourSecurePassword" python3 server.py
+  ```
+- **Protected Endpoints**: `/api/analytics`, `/api/history`, `/api/export-history`, and `DELETE /api/history` strictly require valid admin session tokens. Anonymous attempts are blocked with `HTTP 401 Unauthorized`.
 
 ---
 
