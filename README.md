@@ -59,44 +59,52 @@ py server.py
 
 | Feature | Description |
 | :--- | :--- |
-| **Drag & Drop Upload** | Drop single images, folders, or paste directly from your clipboard (`Ctrl+V`). |
+| **Interactive Curtain Split Slider** | Draggable swipe curtain (like Squoosh/Juxtapose) for 100% pixel-level Before/After comparison, with Fit, 1x, 2x zoom and Side-by-Side toggle. |
+| **Image-to-PDF Document Package** | Compile compressed images into a single multi-page PDF under strict size caps with customizable page margins and orientation. |
+| **EXIF & GPS Privacy Stripper** | One-click toggle that strips camera serials, timestamps, and GPS coordinates before export. |
+| **Folder Structure Preservation** | Drag whole folder hierarchies or use the "Browse Folder" button; folder paths are mirrored in the output batch ZIP. |
+| **Batch File Renaming Rules** | Rename output files using customizable tags (`{name}`, `{ext}`, `{size}`, `{index}`, `{date}`) or quick presets (`{name}_min`, `{index}_{name}`, clean slug). |
+| **Custom Watermark & Stamp** | Add branded text watermarks with position controls (center, corners) and adjustable opacity overlay. |
+| **Drag & Drop & Clipboard** | Drop single images, folders, or paste directly from your clipboard (`Ctrl+V`). |
 | **Numeric Target Size** | Direct number input (`[ 500 ] KB`) synchronized with precision slider and preset chips (`100 KB`, `250 KB`, `500 KB`, `1 MB`). |
-| **Format Selector** | Switch between **Auto (Keep Original)**, **PNG**, **JPEG**, **WebP**, and **AVIF**. |
-| **Side-by-Side Comparison** | Click any thumbnail to inspect original vs. compressed images with live size metrics before downloading. |
-| **One-Click Batch ZIP** | Download all compressed files in a single organized `.zip` archive. |
-| **Local Disk Processing** | Switch to the "Local Folder" tab to process your local `./images` directory into `./compressed_images` with 1 click. |
+| **Multi-Format Selection** | Switch between **Auto (Keep Original)**, **PNG**, **JPEG**, **WebP**, and **AVIF**. |
 | **🔒 Protected Admin Portal** | Dedicated analytics console (`admin.html`) locked behind a master password with live SQLite audit logs and CSV export. |
+| **PBKDF2 Password Security** | Change the admin master password directly within the portal, securely stored as a salted PBKDF2-HMAC-SHA256 hash. |
+| **Brute-Force Rate Limiting** | Automatically locks out suspicious IPs for 15 minutes after 5 failed login attempts with HTTP 429 status. |
+| **IP Blacklist & Access Control** | Block and unblock client IPs directly from the security modal. |
+| **Date-Range Analytics Filtering** | Filter audit logs and KPI metrics by **All Time**, **Today**, **Last 7 Days**, or **Last 30 Days**. |
 
 ---
 
 ## 🔒 Admin Portal & Analytics Security
 
-The Analytics & Activity Log screen is completely separated from the public compression tool and protected by admin authentication:
+The Analytics & Activity Log screen is completely separated from the public compression tool and protected by enterprise-grade security:
 
 - **Admin URL**: `http://localhost:5000/admin.html`
 - **Default Master Password**: `admin123`
-- **Custom Password**: Set via environment variable before running `server.py`:
-  ```bash
-  # Windows PowerShell:
-  $env:ADMIN_PASSWORD="YourSecurePassword"
-  py server.py
-
-  # macOS / Linux:
-  ADMIN_PASSWORD="YourSecurePassword" python3 server.py
-  ```
-- **Protected Endpoints**: `/api/analytics`, `/api/history`, `/api/export-history`, and `DELETE /api/history` strictly require valid admin session tokens. Anonymous attempts are blocked with `HTTP 401 Unauthorized`.
+- **In-Portal Password Management**: Change the master password anytime from the admin header. Passwords are encrypted using **PBKDF2-HMAC-SHA256 with random 16-byte salt (100,000 rounds)** and stored in the SQLite `admin_config` table.
+- **Brute-Force Rate Limiting**: After 5 failed password attempts from a client IP within a 15-minute window, the server automatically returns `HTTP 429 Too Many Requests` and locks login for 15 minutes.
+- **IP Blacklisting**: Block offending or abusive client IPs from accessing the server.
+- **Date-Range Telemetry**: View telemetry metrics and filter audit events across **All Time**, **Today**, **Last 7 Days**, and **Last 30 Days**.
+- **Protected Endpoints**: `/api/analytics`, `/api/history`, `/api/export-history`, `/api/admin/change-password`, and `/api/admin/blacklist` strictly require valid admin session tokens. Anonymous attempts are blocked with `HTTP 401 Unauthorized`.
 
 ---
 
 ## 💻 Command Line Interface (CLI)
 
-The CLI tool (`compress_images.py`) is modular, scriptable, and can be integrated into automation pipelines.
+The CLI tool (`compress_images.py`) is modular, scriptable, and integrates directly with the SQLite database.
 
 ### Usage Examples
 
 ```powershell
 # Default: Compresses all images in ./images to under 500 KB into ./compressed_images
 py compress_images.py
+
+# Strip EXIF metadata and stamp a watermark:
+py compress_images.py -s 500 --watermark "CONFIDENTIAL"
+
+# Compile all compressed images into a single multi-page PDF document:
+py compress_images.py -i ./images -o ./compressed_images --pdf-out ./compressed_images/document.pdf
 
 # Keep each file's original format (PNG -> PNG, JPG -> JPG):
 py compress_images.py -f auto -s 500
@@ -123,6 +131,9 @@ py compress_images.py -i "path/to/folder" --in-place
 | `--input` | `-i` | `./images` | Input directory containing images to compress. |
 | `--output` | `-o` | `./compressed_images` | Output directory where compressed files will be saved. |
 | `--in-place` | - | `False` | Overwrite original images directly in-place. |
+| `--keep-exif` | - | `False` | Preserve EXIF/GPS metadata (default strips EXIF for privacy). |
+| `--watermark` | - | `""` | Optional text to watermark across compressed images. |
+| `--pdf-out` | - | `None` | Compile all processed images into a single combined PDF document. |
 
 ---
 

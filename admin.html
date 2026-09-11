@@ -28,6 +28,22 @@
     </div>
 
     <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <button type="button" class="btn-secondary" id="adminSettingsBtn" style="display: none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Security & Password
+      </button>
+      <button type="button" class="btn-secondary" id="ipAccessBtn" style="display: none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+          <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+          <line x1="6" y1="6" x2="6.01" y2="6"></line>
+          <line x1="6" y1="18" x2="6.01" y2="18"></line>
+        </svg>
+        IP Access
+      </button>
       <a href="index.html" class="btn-secondary" style="text-decoration: none;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -169,6 +185,13 @@
           <input type="text" id="historySearchInput" placeholder="Search activity by filename...">
         </div>
 
+        <select id="historyRangeFilter" class="select-filter">
+          <option value="ALL" selected>All Time</option>
+          <option value="TODAY">Today</option>
+          <option value="7D">Last 7 Days</option>
+          <option value="30D">Last 30 Days</option>
+        </select>
+
         <select id="historyFormatFilter" class="select-filter">
           <option value="ALL">All Formats</option>
           <option value="PNG">PNG</option>
@@ -222,6 +245,63 @@
     </div>
 
   </main>
+
+  <!-- Change Password Modal -->
+  <div class="modal-backdrop" id="passwordModal" style="display: none;">
+    <div class="modal-card" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3>Change Admin Password</h3>
+        <button type="button" class="btn-close" id="closePassModalBtn">&times;</button>
+      </div>
+      <form id="changePassForm" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+        <div>
+          <label style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">Current Password</label>
+          <input type="password" id="currentPassInput" class="admin-pass-input" required autocomplete="current-password" placeholder="Enter current master password...">
+        </div>
+        <div>
+          <label style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">New Password (min 6 chars)</label>
+          <input type="password" id="newPassInput" class="admin-pass-input" required autocomplete="new-password" placeholder="Enter new strong password...">
+        </div>
+        <div>
+          <label style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">Confirm New Password</label>
+          <input type="password" id="confirmPassInput" class="admin-pass-input" required autocomplete="new-password" placeholder="Confirm new password...">
+        </div>
+        <div id="passErrorMsg" class="auth-error-banner" style="display: none;"></div>
+        <button type="submit" class="btn-execute" id="submitPassBtn" style="width: 100%;">
+          Update Master Password
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- IP Security & Blacklist Modal -->
+  <div class="modal-backdrop" id="ipModal" style="display: none;">
+    <div class="modal-card" style="max-width: 720px; width: 92vw;">
+      <div class="modal-header">
+        <h3>Client IP Security & Access Controls</h3>
+        <button type="button" class="btn-close" id="closeIpModalBtn">&times;</button>
+      </div>
+      <div style="padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem;">
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="text" id="manualIpInput" class="admin-pass-input" placeholder="Enter IP address to block (e.g. 192.168.1.50)..." style="flex: 1;">
+          <button type="button" class="btn-danger" id="blockIpSubmitBtn">Block IP</button>
+        </div>
+        <div style="overflow-x: auto; max-height: 50vh;">
+          <table class="files-table">
+            <thead>
+              <tr>
+                <th>Client IP</th>
+                <th>Total Requests</th>
+                <th>Last Active</th>
+                <th style="text-align: right;">Access Status</th>
+              </tr>
+            </thead>
+            <tbody id="ipTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Toast Shelf -->
   <div class="toast-shelf" id="toastShelf"></div>

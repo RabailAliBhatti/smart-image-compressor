@@ -18,6 +18,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -177,6 +178,69 @@
           </label>
         </div>
       </div>
+
+      <!-- 06. Output File Renaming Rules -->
+      <div>
+        <div class="section-label">06. File Renaming Pattern</div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <input type="text" id="namingPatternInput" class="dimension-input" value="{name}_min.{ext}" placeholder="{name}_min.{ext}">
+          <div class="preset-chips-row">
+            <button type="button" class="preset-chip naming-chip active" data-pattern="{name}_min.{ext}">{name}_min</button>
+            <button type="button" class="preset-chip naming-chip" data-pattern="{name}-compressed.{ext}">{name}-compressed</button>
+            <button type="button" class="preset-chip naming-chip" data-pattern="{index}_{name}.{ext}">{index}_{name}</button>
+            <button type="button" class="preset-chip naming-chip" data-pattern="clean-kebab">clean-slug</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 07. Privacy Shield (EXIF & GPS Stripper) -->
+      <div>
+        <div class="section-label">07. Privacy Shield</div>
+        <label class="toggle-pill" for="stripExifToggle">
+          <div style="display: flex; flex-direction: column; gap: 0.15rem;">
+            <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-main);">Strip EXIF & Geolocation</span>
+            <span style="font-size: 0.72rem; color: var(--text-faint);">Wipes GPS tags, camera serials & metadata</span>
+          </div>
+          <input type="checkbox" id="stripExifToggle" checked>
+        </label>
+      </div>
+
+      <!-- 08. Watermark & Stamp (Optional) -->
+      <div class="watermark-box">
+        <div class="section-label" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" id="watermarkToggleHeader">
+          <span>08. Watermark & Stamp</span>
+          <span id="watermarkStatusBadge" class="badge-tag badge-neutral" style="font-size: 0.65rem;">Disabled</span>
+        </div>
+        <div id="watermarkPanel" style="display: none; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" id="enableWatermarkCheck">
+            <label for="enableWatermarkCheck" style="font-size: 0.8rem; font-weight: 500; color: var(--text-main); cursor: pointer;">Overlay Watermark</label>
+          </div>
+          <div id="watermarkControls" style="display: none; flex-direction: column; gap: 0.6rem;">
+            <div>
+              <label style="font-size: 0.72rem; color: var(--text-faint);">Watermark Text</label>
+              <input type="text" id="watermarkTextInput" class="dimension-input" value="CONFIDENTIAL" placeholder="e.g. CONFIDENTIAL, VISA USE ONLY">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+              <div>
+                <label style="font-size: 0.72rem; color: var(--text-faint);">Placement</label>
+                <select id="watermarkPositionSelect" class="dimension-input" style="padding: 0.4rem;">
+                  <option value="diagonal" selected>Diagonal Tiled</option>
+                  <option value="center">Center Stamp</option>
+                  <option value="bottom-right">Bottom Right</option>
+                  <option value="bottom-left">Bottom Left</option>
+                  <option value="top-right">Top Right</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 0.72rem; color: var(--text-faint);">Opacity (<span id="wmOpacityVal">30%</span>)</label>
+                <input type="range" id="watermarkOpacitySlider" min="10" max="90" value="30" class="size-slider" style="margin-top: 0.35rem;">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </aside>
 
     <!-- Right Work Area -->
@@ -186,6 +250,7 @@
       <section id="uploadView">
         <div class="dropzone" id="dropzone">
           <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/webp,image/bmp,image/avif,image/tiff" style="display: none;">
+          <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
           <div class="dropzone-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -193,9 +258,17 @@
               <line x1="12" y1="12" x2="12" y2="21"></line>
             </svg>
           </div>
-          <div class="dropzone-title">Drop images here to compress</div>
-          <div class="dropzone-subtitle">Supports JPG, PNG, WEBP, and BMP. You can also paste from clipboard (Ctrl+V).</div>
-          <button type="button" class="btn-primary" id="browseBtn">Select Images</button>
+          <div class="dropzone-title">Drop images or folders here</div>
+          <div class="dropzone-subtitle">Supports recursive subfolders, JPG, PNG, WEBP, BMP, and clipboard paste (Ctrl+V).</div>
+          <div style="display: flex; gap: 0.6rem; margin-top: 0.5rem; justify-content: center; flex-wrap: wrap;">
+            <button type="button" class="btn-primary" id="browseBtn">Select Images</button>
+            <button type="button" class="btn-secondary" id="browseFolderBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              Select Folder
+            </button>
+          </div>
         </div>
       </section>
 
@@ -254,6 +327,16 @@
           <h2 id="resultsCount">Files (0)</h2>
           <div class="table-actions">
             <button type="button" class="btn-secondary" id="clearAllBtn">Clear List</button>
+            <button type="button" class="btn-secondary" id="exportPdfBtn" title="Package all images into a single multi-page PDF document">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              Export as PDF
+            </button>
             <button type="button" class="btn-primary" id="downloadAllBtn">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -283,14 +366,74 @@
     </main>
   </div>
 
-  <!-- Comparison Modal -->
+  <!-- Interactive Curtain Diff Comparison Modal -->
   <div class="modal-backdrop" id="compareModal">
-    <div class="modal-card">
+    <div class="modal-card modal-card-curtain">
       <div class="modal-header">
-        <h3 id="modalTitle">Image Comparison</h3>
-        <button type="button" class="btn-close" id="closeModalBtn">&times;</button>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <h3 id="modalTitle" style="font-size: 0.95rem; font-weight: 600;">Image Comparison</h3>
+          <div class="modal-view-mode">
+            <button type="button" class="mode-tab active" id="modalCurtainModeBtn">Curtain Diff</button>
+            <button type="button" class="mode-tab" id="modalSideModeBtn">Side by Side</button>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div class="zoom-controls">
+            <button type="button" class="zoom-btn active" id="modalZoomFitBtn" title="Fit to Viewport">Fit</button>
+            <button type="button" class="zoom-btn" id="modalZoom1xBtn" title="100% Zoom">1x</button>
+            <button type="button" class="zoom-btn" id="modalZoom2xBtn" title="200% Zoom">2x</button>
+          </div>
+          <button type="button" class="btn-close" id="closeModalBtn">&times;</button>
+        </div>
       </div>
-      <div class="modal-body">
+
+      <!-- View 1: Interactive Curtain Slider View -->
+      <div class="curtain-viewport-container" id="curtainViewportWrap">
+        <div class="curtain-viewport" id="curtainViewport">
+          <!-- Original Image (Background) -->
+          <img id="curtainOrigImg" class="curtain-img" src="" alt="Original Image">
+
+          <!-- Compressed Image (Foreground Clipped) -->
+          <div class="curtain-clipped-wrap" id="curtainClippedWrap">
+            <img id="curtainCompImg" class="curtain-img" src="" alt="Compressed Image">
+          </div>
+
+          <!-- Draggable Vertical Divider -->
+          <div class="curtain-divider" id="curtainDivider" style="left: 50%;">
+            <div class="curtain-handle" id="curtainHandle">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Floating Info Badges -->
+          <div class="curtain-badge curtain-badge-left">
+            <span>ORIGINAL</span>
+            <strong id="curtainOrigSize">0 KB</strong>
+          </div>
+          <div class="curtain-badge curtain-badge-right">
+            <span>COMPRESSED</span>
+            <strong id="curtainCompSize" style="color: var(--success-text);">0 KB (-0%)</strong>
+          </div>
+        </div>
+
+        <div class="curtain-toolbar-footer">
+          <div class="curtain-meta-info" id="curtainExifInfo">
+            <span class="badge-tag badge-saved" id="curtainExifBadge">🛡️ EXIF & GPS Cleaned</span>
+            <span id="curtainDimsInfo" style="font-size: 0.75rem; color: var(--text-faint);">1920 &times; 1080 px</span>
+          </div>
+          <div style="font-size: 0.75rem; color: var(--text-faint);">
+            Drag divider or use <kbd style="padding: 1px 4px; border: 1px solid var(--border-base); border-radius: 3px; font-family: var(--font-mono);">&larr;</kbd> <kbd style="padding: 1px 4px; border: 1px solid var(--border-base); border-radius: 3px; font-family: var(--font-mono);">&rarr;</kbd> keys to inspect details
+          </div>
+        </div>
+      </div>
+
+      <!-- View 2: Classic Side by Side (Hidden by default) -->
+      <div class="modal-body" id="sideBySideWrap" style="display: none;">
         <div class="preview-col">
           <div class="preview-meta">
             <span>ORIGINAL</span>
@@ -302,13 +445,53 @@
         </div>
         <div class="preview-col">
           <div class="preview-meta">
-            <span>COMPRESSED (&lt; <span id="modalTargetLabel">500</span> KB)</span>
+            <span>COMPRESSED</span>
             <span id="modalCompSize" style="color: var(--success-text); font-weight: 600;">0 KB</span>
           </div>
           <div class="preview-box">
             <img id="modalCompImg" src="" alt="Compressed Image">
           </div>
         </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PDF Document Packaging Modal -->
+  <div class="modal-backdrop" id="pdfModal" style="display: none;">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>Package Images into PDF</h3>
+        <button type="button" class="btn-close" id="closePdfModalBtn">&times;</button>
+      </div>
+      <div style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">
+          Stitch all processed images into a single multi-page PDF document optimized for portal submission.
+        </p>
+        <div>
+          <label style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">Page Format</label>
+          <select id="pdfPageFormatSelect" class="dimension-input" style="width: 100%; margin-top: 0.3rem;">
+            <option value="a4" selected>A4 Standard (210 &times; 297 mm)</option>
+            <option value="letter">US Letter (8.5 &times; 11 in)</option>
+            <option value="fit">Auto-Fit to Image Dimensions</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-faint);">Target PDF File Size</label>
+          <select id="pdfTargetSizeSelect" class="dimension-input" style="width: 100%; margin-top: 0.3rem;">
+            <option value="500">Strict Cap: Under 500 KB</option>
+            <option value="1000">Under 1 MB</option>
+            <option value="2000" selected>Under 2 MB (Visa & Job Portal Default)</option>
+            <option value="5000">Under 5 MB</option>
+            <option value="0">Max Quality (No Cap)</option>
+          </select>
+        </div>
+        <div id="pdfProgressNotice" style="display: none; font-size: 0.8rem; color: var(--accent-text);">
+          Compiling PDF pages, please wait...
+        </div>
+        <button type="button" class="btn-execute" id="generatePdfBtn" style="margin-top: 0.5rem; width: 100%;">
+          Download Packaged PDF
+        </button>
       </div>
     </div>
   </div>

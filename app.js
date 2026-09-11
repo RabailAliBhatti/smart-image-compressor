@@ -32,10 +32,28 @@
   const maxHeightInput = document.getElementById('maxHeightInput');
   const formatRadios = document.querySelectorAll('input[name="formatOption"]');
 
-  // Dropzone & File Input
+  // Dropzone & File/Folder Inputs
   const dropzone = document.getElementById('dropzone');
   const fileInput = document.getElementById('fileInput');
+  const folderInput = document.getElementById('folderInput');
   const browseBtn = document.getElementById('browseBtn');
+  const browseFolderBtn = document.getElementById('browseFolderBtn');
+
+  // Renaming & Privacy Controls
+  const namingPatternInput = document.getElementById('namingPatternInput');
+  const namingChips = document.querySelectorAll('.naming-chip');
+  const stripExifToggle = document.getElementById('stripExifToggle');
+
+  // Watermark Elements
+  const watermarkToggleHeader = document.getElementById('watermarkToggleHeader');
+  const watermarkStatusBadge = document.getElementById('watermarkStatusBadge');
+  const watermarkPanel = document.getElementById('watermarkPanel');
+  const enableWatermarkCheck = document.getElementById('enableWatermarkCheck');
+  const watermarkControls = document.getElementById('watermarkControls');
+  const watermarkTextInput = document.getElementById('watermarkTextInput');
+  const watermarkPositionSelect = document.getElementById('watermarkPositionSelect');
+  const watermarkOpacitySlider = document.getElementById('watermarkOpacitySlider');
+  const wmOpacityVal = document.getElementById('wmOpacityVal');
 
   // Results & Table
   const resultsSection = document.getElementById('resultsSection');
@@ -48,17 +66,42 @@
 
   const clearAllBtn = document.getElementById('clearAllBtn');
   const downloadAllBtn = document.getElementById('downloadAllBtn');
+  const exportPdfBtn = document.getElementById('exportPdfBtn');
   const runLocalBatchBtn = document.getElementById('runLocalBatchBtn');
 
-  // Modal Elements
+  // Curtain Diff Comparison Modal
   const compareModal = document.getElementById('compareModal');
   const closeModalBtn = document.getElementById('closeModalBtn');
   const modalTitle = document.getElementById('modalTitle');
+  const modalCurtainModeBtn = document.getElementById('modalCurtainModeBtn');
+  const modalSideModeBtn = document.getElementById('modalSideModeBtn');
+  const modalZoomFitBtn = document.getElementById('modalZoomFitBtn');
+  const modalZoom1xBtn = document.getElementById('modalZoom1xBtn');
+  const modalZoom2xBtn = document.getElementById('modalZoom2xBtn');
+
+  const curtainViewportWrap = document.getElementById('curtainViewportWrap');
+  const curtainViewport = document.getElementById('curtainViewport');
+  const curtainOrigImg = document.getElementById('curtainOrigImg');
+  const curtainCompImg = document.getElementById('curtainCompImg');
+  const curtainClippedWrap = document.getElementById('curtainClippedWrap');
+  const curtainDivider = document.getElementById('curtainDivider');
+  const curtainHandle = document.getElementById('curtainHandle');
+  const curtainOrigSize = document.getElementById('curtainOrigSize');
+  const curtainCompSize = document.getElementById('curtainCompSize');
+  const curtainExifBadge = document.getElementById('curtainExifBadge');
+  const curtainDimsInfo = document.getElementById('curtainDimsInfo');
+  const sideBySideWrap = document.getElementById('sideBySideWrap');
   const modalOrigImg = document.getElementById('modalOrigImg');
   const modalCompImg = document.getElementById('modalCompImg');
   const modalOrigSize = document.getElementById('modalOrigSize');
   const modalCompSize = document.getElementById('modalCompSize');
-  const modalTargetLabel = document.getElementById('modalTargetLabel');
+
+  // PDF Modal Elements
+  const pdfModal = document.getElementById('pdfModal');
+  const closePdfModalBtn = document.getElementById('closePdfModalBtn');
+  const pdfPageFormatSelect = document.getElementById('pdfPageFormatSelect');
+  const pdfTargetSizeSelect = document.getElementById('pdfTargetSizeSelect');
+  const generatePdfBtn = document.getElementById('generatePdfBtn');
 
   const toastShelf = document.getElementById('toastShelf');
 
@@ -195,16 +238,185 @@
     });
   });
 
+  // Renaming Pattern Chips
+  namingChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      namingChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      namingPatternInput.value = chip.dataset.pattern;
+    });
+  });
+
+  // Watermark Accordion & Controls
+  watermarkToggleHeader.addEventListener('click', () => {
+    const isClosed = watermarkPanel.style.display === 'none';
+    watermarkPanel.style.display = isClosed ? 'flex' : 'none';
+  });
+
+  enableWatermarkCheck.addEventListener('change', (e) => {
+    watermarkControls.style.display = e.target.checked ? 'flex' : 'none';
+    watermarkStatusBadge.textContent = e.target.checked ? 'Active' : 'Disabled';
+    watermarkStatusBadge.className = `badge-tag ${e.target.checked ? 'badge-saved' : 'badge-neutral'}`;
+  });
+
+  watermarkOpacitySlider.addEventListener('input', (e) => {
+    wmOpacityVal.textContent = `${e.target.value}%`;
+  });
+
+  // Filename Resolver
+  function resolveFileName(template, item, index) {
+    let rawTemplate = template || '{name}_min.{ext}';
+    let baseName = item.name.replace(/\.[^/.]+$/, '');
+    let ext = (item.outputExt || '.jpg').replace(/^\./, '');
+    let sizeKb = item.compressedSize ? Math.round(item.compressedSize / 1024) + 'kb' : 'min';
+    let dateStr = new Date().toISOString().slice(0, 10);
+
+    if (rawTemplate === 'clean-kebab' || rawTemplate === 'slug') {
+      let clean = baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      return `${clean || 'image'}.${ext}`;
+    }
+
+    let result = rawTemplate
+      .replace(/\{name\}/g, baseName)
+      .replace(/\{ext\}/g, ext)
+      .replace(/\{size\}/g, sizeKb)
+      .replace(/\{index\}/g, String(index + 1))
+      .replace(/\{date\}/g, dateStr);
+
+    result = result.replace(/[<>:"/\\|?*]/g, '_');
+    if (!result.toLowerCase().endsWith('.' + ext.toLowerCase())) {
+      result += '.' + ext;
+    }
+    return result;
+  }
+
+  // Watermark Renderer on Canvas
+  function applyWatermark(ctx, w, h, text, pos, opacity) {
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    const fontSize = Math.max(16, Math.round(Math.min(w, h) * 0.055));
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 1;
+
+    if (pos === 'diagonal') {
+      ctx.translate(w / 2, h / 2);
+      ctx.rotate(-Math.PI / 6);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const stepY = fontSize * 3.5;
+      for (let dy of [-stepY, 0, stepY]) {
+        ctx.fillText(text, 0, dy);
+      }
+    } else if (pos === 'center') {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, w / 2, h / 2);
+    } else if (pos === 'bottom-right') {
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(text, w - 20, h - 20);
+    } else if (pos === 'bottom-left') {
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(text, 20, h - 20);
+    } else if (pos === 'top-right') {
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'top';
+      ctx.fillText(text, w - 20, 20);
+    }
+    ctx.restore();
+  }
+
+  // EXIF Metadata Inspector
+  function checkExifPresence(file) {
+    return new Promise(resolve => {
+      if (!file || !file.type || !file.type.includes('jpeg')) {
+        resolve({ hasExif: false, hasGps: false });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const view = new DataView(e.target.result);
+          if (view.byteLength < 4 || view.getUint16(0, false) !== 0xFFD8) {
+            resolve({ hasExif: false, hasGps: false });
+            return;
+          }
+          let offset = 2;
+          let hasExif = false;
+          let hasGps = false;
+          while (offset < view.byteLength - 4) {
+            const marker = view.getUint16(offset, false);
+            if (marker === 0xFFE1) {
+              hasExif = true;
+              const len = view.getUint16(offset + 2, false);
+              const bytes = new Uint8Array(e.target.result, offset + 4, Math.min(len, 200));
+              let str = '';
+              for (let i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
+              if (str.includes('GPS')) hasGps = true;
+              break;
+            }
+            if ((marker & 0xFF00) !== 0xFF00) break;
+            const length = view.getUint16(offset + 2, false);
+            offset += 2 + length;
+          }
+          resolve({ hasExif, hasGps });
+        } catch (err) {
+          resolve({ hasExif: false, hasGps: false });
+        }
+      };
+      reader.onerror = () => resolve({ hasExif: false, hasGps: false });
+      reader.readAsArrayBuffer(file.slice(0, 65536));
+    });
+  }
+
+  // Recursive Directory Traversal
+  async function traverseDirectory(entry, path = '') {
+    const files = [];
+    if (entry.isFile) {
+      const file = await new Promise((res, rej) => entry.file(res, rej));
+      file.relativePath = path ? `${path}/${file.name}` : file.name;
+      files.push(file);
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const entries = await new Promise((res, rej) => reader.readEntries(res, rej));
+      const subPath = path ? `${path}/${entry.name}` : entry.name;
+      for (const subEntry of entries) {
+        const subFiles = await traverseDirectory(subEntry, subPath);
+        files.push(...subFiles);
+      }
+    }
+    return files;
+  }
+
   // Dropzone Handlers
   browseBtn.addEventListener('click', () => fileInput.click());
+  browseFolderBtn.addEventListener('click', () => folderInput.click());
   dropzone.addEventListener('click', (e) => {
-    if (e.target !== browseBtn) fileInput.click();
+    if (e.target !== browseBtn && e.target !== browseFolderBtn && !browseFolderBtn.contains(e.target)) {
+      fileInput.click();
+    }
   });
 
   fileInput.addEventListener('change', (e) => {
     if (e.target.files && e.target.files.length) {
       handleFiles(Array.from(e.target.files));
       fileInput.value = '';
+    }
+  });
+
+  folderInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length) {
+      const list = Array.from(e.target.files);
+      list.forEach(f => {
+        f.relativePath = f.webkitRelativePath || f.name;
+      });
+      handleFiles(list);
+      folderInput.value = '';
     }
   });
 
@@ -222,9 +434,33 @@
     });
   });
 
-  dropzone.addEventListener('drop', (e) => {
-    if (e.dataTransfer && e.dataTransfer.files) {
-      handleFiles(Array.from(e.dataTransfer.files));
+  dropzone.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+
+    const dt = e.dataTransfer;
+    if (!dt) return;
+
+    if (dt.items && dt.items.length) {
+      const droppedFiles = [];
+      for (let i = 0; i < dt.items.length; i++) {
+        const item = dt.items[i];
+        if (item.webkitGetAsEntry) {
+          const entry = item.webkitGetAsEntry();
+          if (entry) {
+            const entryFiles = await traverseDirectory(entry);
+            droppedFiles.push(...entryFiles);
+          }
+        }
+      }
+      if (droppedFiles.length) {
+        handleFiles(droppedFiles);
+        return;
+      }
+    }
+
+    if (dt.files && dt.files.length) {
+      handleFiles(Array.from(dt.files));
     }
   });
 
@@ -286,7 +522,10 @@
             (fmt.ext === '.webp' && (file.type === 'image/webp' || /\.webp$/i.test(file.name)))
           );
 
-          if (isSameFormat && origSize <= targetBytes && !maxW && !maxH) {
+          const hasWatermark = enableWatermarkCheck && enableWatermarkCheck.checked && watermarkTextInput.value.trim().length > 0;
+          const stripExif = stripExifToggle ? stripExifToggle.checked : true;
+
+          if (isSameFormat && origSize <= targetBytes && !maxW && !maxH && !hasWatermark && !stripExif) {
             resolve({ blob: file, size: origSize, wasCompressed: false, ext: fmt.ext, mime: fmt.mime });
             return;
           }
@@ -304,6 +543,13 @@
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, 0, 0, w, h);
+
+            if (hasWatermark) {
+              const text = watermarkTextInput.value.trim();
+              const pos = watermarkPositionSelect.value;
+              const op = (parseInt(watermarkOpacitySlider.value, 10) || 30) / 100;
+              applyWatermark(ctx, w, h, text, pos, op);
+            }
 
             return new Promise(res => {
               canvas.toBlob(b => res(b), mime, quality);
@@ -432,10 +678,14 @@
     for (const file of validFiles) {
       const id = 'row_' + Math.random().toString(36).substring(2, 9);
       const origUrl = URL.createObjectURL(file);
+      const exifInfo = await checkExifPresence(file);
 
       const item = {
         id,
         name: file.name,
+        relativePath: file.relativePath || file.name,
+        hasExif: exifInfo.hasExif,
+        hasGps: exifInfo.hasGps,
         originalFile: file,
         originalSize: file.size,
         compressedBlob: null,
@@ -489,12 +739,24 @@
     const tr = document.createElement('tr');
     tr.id = item.id;
 
+    const folderBadge = item.relativePath && item.relativePath.includes('/')
+      ? `<span class="badge-tag badge-neutral" style="font-size: 0.68rem; margin-right: 0.3rem;">📁 ${item.relativePath.substring(0, item.relativePath.lastIndexOf('/') + 1)}</span>`
+      : '';
+
+    const exifBadge = item.hasGps
+      ? `<span class="badge-tag badge-saved" style="font-size: 0.65rem;" title="GPS location detected and stripped">🛡️ GPS</span>`
+      : (item.hasExif ? `<span class="badge-tag badge-neutral" style="font-size: 0.65rem;" title="Camera metadata stripped">🛡️ EXIF</span>` : '');
+
     tr.innerHTML = `
       <td>
         <div class="cell-file">
           <img class="table-thumb" id="thumb_${item.id}" src="${item.origUrl}" alt="Preview" title="Click to compare">
           <div class="file-name-wrapper">
-            <span class="file-name" title="${item.name}">${item.name}</span>
+            <div style="display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap;">
+              ${folderBadge}
+              <span class="file-name" title="${item.name}">${item.name}</span>
+              ${exifBadge}
+            </div>
           </div>
         </div>
       </td>
@@ -578,14 +840,14 @@
   function downloadSingle(item) {
     if (!item.compressedBlob) return;
     const link = document.createElement('a');
-    let ext = item.outputExt || '.jpg';
-    let baseName = item.name.replace(/\.[^/.]+$/, '');
-    link.download = `${baseName}_under${targetSizeKb}kb${ext}`;
+    const index = items.indexOf(item);
+    const pattern = namingPatternInput ? namingPatternInput.value.trim() : '{name}_min.{ext}';
+    link.download = resolveFileName(pattern, item, index >= 0 ? index : 0);
     link.href = item.compUrl;
     link.click();
   }
 
-  // Batch ZIP Download
+  // Batch ZIP Download with Folder Structure Preservation
   downloadAllBtn.addEventListener('click', async () => {
     const readyItems = items.filter(i => i.status === 'done' && i.compressedBlob);
     if (readyItems.length === 0) {
@@ -593,14 +855,20 @@
       return;
     }
 
+    const pattern = namingPatternInput ? namingPatternInput.value.trim() : '{name}_min.{ext}';
+
     if (window.JSZip) {
       const zip = new JSZip();
       showToast('Packaging images into ZIP...');
 
-      readyItems.forEach(item => {
-        let ext = item.outputExt || '.jpg';
-        let baseName = item.name.replace(/\.[^/.]+$/, '');
-        zip.file(`${baseName}_compressed${ext}`, item.compressedBlob);
+      readyItems.forEach((item, idx) => {
+        const resolvedName = resolveFileName(pattern, item, idx);
+        let zipPath = resolvedName;
+        if (item.relativePath && item.relativePath.includes('/')) {
+          const folderPart = item.relativePath.substring(0, item.relativePath.lastIndexOf('/') + 1);
+          zipPath = folderPart + resolvedName;
+        }
+        zip.file(zipPath, item.compressedBlob);
       });
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -617,6 +885,88 @@
     }
   });
 
+  // PDF Document Packaging Modal Handlers
+  exportPdfBtn.addEventListener('click', () => {
+    const readyItems = items.filter(i => i.status === 'done' && (i.compUrl || i.origUrl));
+    if (readyItems.length === 0) {
+      showToast('No compressed images available to package into PDF.');
+      return;
+    }
+    pdfModal.classList.add('open');
+  });
+
+  closePdfModalBtn.addEventListener('click', () => pdfModal.classList.remove('open'));
+  pdfModal.addEventListener('click', (e) => {
+    if (e.target === pdfModal) pdfModal.classList.remove('open');
+  });
+
+  generatePdfBtn.addEventListener('click', async () => {
+    const readyItems = items.filter(i => i.status === 'done' && (i.compUrl || i.origUrl));
+    if (readyItems.length === 0) return;
+
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      alert('jsPDF library is still loading. Please try again in a few seconds.');
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const format = pdfPageFormatSelect.value;
+    const progressNotice = document.getElementById('pdfProgressNotice');
+
+    progressNotice.style.display = 'block';
+    progressNotice.textContent = `Compiling ${readyItems.length} pages into PDF...`;
+    generatePdfBtn.disabled = true;
+
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: format === 'letter' ? 'letter' : 'a4'
+      });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      for (let i = 0; i < readyItems.length; i++) {
+        if (i > 0) doc.addPage();
+        const item = readyItems[i];
+
+        const img = await new Promise((res, rej) => {
+          const image = new Image();
+          image.crossOrigin = 'anonymous';
+          image.onload = () => res(image);
+          image.onerror = rej;
+          image.src = item.compUrl || item.origUrl;
+        });
+
+        const imgRatio = img.width / img.height;
+        let renderW = pageWidth - 20;
+        let renderH = renderW / imgRatio;
+
+        if (renderH > pageHeight - 20) {
+          renderH = pageHeight - 20;
+          renderW = renderH * imgRatio;
+        }
+
+        const renderX = (pageWidth - renderW) / 2;
+        const renderY = (pageHeight - renderH) / 2;
+
+        doc.addImage(img, 'JPEG', renderX, renderY, renderW, renderH, undefined, 'FAST');
+        progressNotice.textContent = `Added page ${i + 1} of ${readyItems.length}...`;
+      }
+
+      doc.save(`document_package_${readyItems.length}pages.pdf`);
+      showToast(`PDF document package created successfully.`);
+      pdfModal.classList.remove('open');
+    } catch (err) {
+      console.error('PDF error:', err);
+      showToast('Failed to create PDF document.');
+    } finally {
+      progressNotice.style.display = 'none';
+      generatePdfBtn.disabled = false;
+    }
+  });
+
   // Clear All List
   clearAllBtn.addEventListener('click', () => {
     items.forEach(item => {
@@ -629,14 +979,123 @@
     showToast('List cleared.');
   });
 
-  // Comparison Modal
+  // Curtain Diff Comparison Modal Engine
+  let isDraggingCurtain = false;
+
+  function updateCurtainPosition(clientX) {
+    const rect = curtainViewport.getBoundingClientRect();
+    let pos = (clientX - rect.left) / rect.width;
+    pos = Math.max(0.01, Math.min(0.99, pos));
+    const pct = (pos * 100).toFixed(1);
+
+    curtainDivider.style.left = `${pct}%`;
+    curtainClippedWrap.style.clipPath = `polygon(${pct}% 0, 100% 0, 100% 100%, ${pct}% 100%)`;
+  }
+
+  curtainViewport.addEventListener('pointerdown', (e) => {
+    isDraggingCurtain = true;
+    updateCurtainPosition(e.clientX);
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!isDraggingCurtain) return;
+    updateCurtainPosition(e.clientX);
+  });
+
+  window.addEventListener('pointerup', () => {
+    isDraggingCurtain = false;
+  });
+
+  // Keyboard navigation when modal is open
+  window.addEventListener('keydown', (e) => {
+    if (!compareModal.classList.contains('open')) return;
+    const curLeft = parseFloat(curtainDivider.style.left) || 50;
+    if (e.key === 'ArrowLeft') {
+      const next = Math.max(2, curLeft - 4);
+      curtainDivider.style.left = `${next}%`;
+      curtainClippedWrap.style.clipPath = `polygon(${next}% 0, 100% 0, 100% 100%, ${next}% 100%)`;
+    } else if (e.key === 'ArrowRight') {
+      const next = Math.min(98, curLeft + 4);
+      curtainDivider.style.left = `${next}%`;
+      curtainClippedWrap.style.clipPath = `polygon(${next}% 0, 100% 0, 100% 100%, ${next}% 100%)`;
+    } else if (e.key === 'Escape') {
+      compareModal.classList.remove('open');
+      pdfModal.classList.remove('open');
+    }
+  });
+
+  // Zoom toggles
+  function setCurtainZoom(scale) {
+    curtainOrigImg.style.transform = `scale(${scale})`;
+    curtainCompImg.style.transform = `scale(${scale})`;
+
+    modalZoomFitBtn.classList.toggle('active', scale === 1);
+    modalZoom1xBtn.classList.toggle('active', scale === 1.5);
+    modalZoom2xBtn.classList.toggle('active', scale === 2.2);
+  }
+
+  modalZoomFitBtn.addEventListener('click', () => setCurtainZoom(1));
+  modalZoom1xBtn.addEventListener('click', () => setCurtainZoom(1.5));
+  modalZoom2xBtn.addEventListener('click', () => setCurtainZoom(2.2));
+
+  // Modal View Switcher (Curtain Diff vs Side-by-Side)
+  modalCurtainModeBtn.addEventListener('click', () => {
+    modalCurtainModeBtn.classList.add('active');
+    modalSideModeBtn.classList.remove('active');
+    curtainViewportWrap.style.display = 'flex';
+    sideBySideWrap.style.display = 'none';
+  });
+
+  modalSideModeBtn.addEventListener('click', () => {
+    modalSideModeBtn.classList.add('active');
+    modalCurtainModeBtn.classList.remove('active');
+    curtainViewportWrap.style.display = 'none';
+    sideBySideWrap.style.display = 'grid';
+  });
+
   function openCompareModal(item) {
     modalTitle.textContent = item.name;
+
+    // Set images
+    curtainOrigImg.src = item.origUrl;
+    curtainCompImg.src = item.compUrl || item.origUrl;
     modalOrigImg.src = item.origUrl;
     modalCompImg.src = item.compUrl || item.origUrl;
+
+    // Badges & Labels
+    curtainOrigSize.textContent = formatBytes(item.originalSize);
     modalOrigSize.textContent = formatBytes(item.originalSize);
-    modalCompSize.textContent = formatBytes(item.compressedSize);
-    modalTargetLabel.textContent = `${targetSizeKb}`;
+
+    const saved = item.originalSize - (item.compressedSize || item.originalSize);
+    const pct = item.originalSize > 0 ? ((saved / item.originalSize) * 100).toFixed(0) : 0;
+    const compText = `${formatBytes(item.compressedSize)} (-${pct}%)`;
+
+    curtainCompSize.textContent = compText;
+    modalCompSize.textContent = compText;
+
+    // EXIF & Dimension info
+    const imgTest = new Image();
+    imgTest.onload = () => {
+      curtainDimsInfo.textContent = `${imgTest.naturalWidth} × ${imgTest.naturalHeight} px`;
+    };
+    imgTest.src = item.origUrl;
+
+    if (item.hasGps) {
+      curtainExifBadge.textContent = '🛡️ EXIF & GPS Location Stripped';
+      curtainExifBadge.className = 'badge-tag badge-saved';
+    } else if (item.hasExif) {
+      curtainExifBadge.textContent = '🛡️ Camera Metadata Stripped';
+      curtainExifBadge.className = 'badge-tag badge-saved';
+    } else {
+      curtainExifBadge.textContent = '🛡️ Clean File (No EXIF Found)';
+      curtainExifBadge.className = 'badge-tag badge-neutral';
+    }
+
+    // Reset divider to 50% and zoom to 1
+    curtainDivider.style.left = '50%';
+    curtainClippedWrap.style.clipPath = 'polygon(50% 0, 100% 0, 100% 100%, 50% 100%)';
+    setCurtainZoom(1);
+
     compareModal.classList.add('open');
   }
 

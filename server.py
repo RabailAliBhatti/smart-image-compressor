@@ -67,6 +67,11 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
         self.send_json({"error": "Unauthorized. Admin password required."}, status=401)
 
     def do_GET(self):
+        client_ip = self.client_address[0]
+        if db.is_ip_blocked(client_ip):
+            self.send_json({"error": "Access denied. IP blocked by administrator."}, status=403)
+            return
+
         parsed = urlparse(self.path)
         path = parsed.path
         query = parse_qs(parsed.query)
@@ -90,7 +95,8 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
             if not verify_admin_auth(self):
                 self.send_unauthorized()
                 return
-            analytics = db.get_analytics()
+            date_range = query.get("range", ["ALL"])[0]
+            analytics = db.get_analytics(date_range=date_range)
             self.send_json(analytics)
             return
 
@@ -103,6 +109,7 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
             search = query.get("search", [None])[0]
             format_filter = query.get("format", [None])[0]
             source_filter = query.get("source", [None])[0]
+            date_range = query.get("range", ["ALL"])[0]
             limit = int(query.get("limit", [100])[0])
             offset = int(query.get("offset", [0])[0])
 
@@ -110,6 +117,7 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
                 search=search,
                 format_filter=format_filter,
                 source_filter=source_filter,
+                date_range=date_range,
                 limit=limit,
                 offset=offset
             )
@@ -122,7 +130,18 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
             })
             return
 
-        # 4. Protected Export CSV (Requires Admin)
+        # 4. Protected IP Blacklist & Access Summary (Requires Admin)
+        if path == "/api/admin/blacklist":
+            if not verify_admin_auth(self):
+                self.send_unauthorized()
+                return
+            self.send_json({
+                "blacklist": db.get_blacklist(),
+                "top_clients": db.get_top_client_ips()
+            })
+            return
+
+        # 5. Protected Export CSV (Requires Admin)
         if path == "/api/export-history":
             if not verify_admin_auth(self):
                 self.send_unauthorized()
@@ -140,6 +159,13 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self):
+        client_ip = self.client_address[0]
+        user_agent = self.headers.get("User-Agent", "")
+
+        if db.is_ip_blocked(client_ip):
+            self.send_json({"error": "Access denied. IP blocked by administrator."}, status=403)
+            return
+
         parsed = urlparse(self.path)
         path = parsed.path
         content_length = int(self.headers.get("Content-Length", 0))
@@ -149,17 +175,31 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
         except Exception:
             payload = {}
 
-        client_ip = self.client_address[0]
-        user_agent = self.headers.get("User-Agent", "")
-
-        # 1. Admin Login Endpoint
+        # 1. Admin Login Endpoint (with Rate Limiting & PBKDF2 Password Check)
         if path == "/api/admin/login":
+            is_locked, retry_secs = db.check_login_rate_limit(client_ip)
+            if is_locked:
+                self.send_json({
+                    "error": f"Too many failed login attempts. Locked out for {retry_secs // 60} minutes.",
+                    "retry_after": retry_secs
+                }, status=429)
+                return
+
             entered_password = payload.get("password", "")
-            if entered_password == ADMIN_PASSWORD:
+            stored_hash = db.get_stored_admin_password_hash()
+
+            if stored_hash:
+                valid = db.verify_password_hash(entered_password, stored_hash)
+            else:
+                valid = (entered_password == ADMIN_PASSWORD)
+
+            if valid:
+                db.record_login_attempt(client_ip, success=True)
                 token = secrets.token_hex(24)
                 ACTIVE_ADMIN_TOKENS.add(token)
                 self.send_json({"success": True, "token": token})
             else:
+                db.record_login_attempt(client_ip, success=False)
                 self.send_json({"error": "Invalid admin password."}, status=401)
             return
 
@@ -175,6 +215,64 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/admin/verify":
             is_valid = verify_admin_auth(self)
             self.send_json({"valid": is_valid}, status=200 if is_valid else 401)
+            return
+
+        # 4. Admin Password Change Endpoint
+        if path == "/api/admin/change-password":
+            if not verify_admin_auth(self):
+                self.send_unauthorized()
+                return
+
+            current_password = payload.get("current_password", "")
+            new_password = payload.get("new_password", "")
+
+            if len(new_password) < 6:
+                self.send_json({"error": "New password must be at least 6 characters."}, status=400)
+                return
+
+            stored_hash = db.get_stored_admin_password_hash()
+            if stored_hash:
+                valid = db.verify_password_hash(current_password, stored_hash)
+            else:
+                valid = (current_password == ADMIN_PASSWORD)
+
+            if not valid:
+                self.send_json({"error": "Current password is incorrect."}, status=401)
+                return
+
+            db.set_admin_password(new_password)
+            self.send_json({"success": True, "message": "Password updated successfully."})
+            return
+
+        # 5. Admin Block IP Endpoint
+        if path == "/api/admin/block-ip":
+            if not verify_admin_auth(self):
+                self.send_unauthorized()
+                return
+
+            target_ip = payload.get("ip", "").strip()
+            reason = payload.get("reason", "Administrative block")
+            if not target_ip:
+                self.send_json({"error": "IP address required."}, status=400)
+                return
+
+            db.block_ip(target_ip, reason)
+            self.send_json({"success": True, "message": f"IP {target_ip} blocked."})
+            return
+
+        # 6. Admin Unblock IP Endpoint
+        if path == "/api/admin/unblock-ip":
+            if not verify_admin_auth(self):
+                self.send_unauthorized()
+                return
+
+            target_ip = payload.get("ip", "").strip()
+            if not target_ip:
+                self.send_json({"error": "IP address required."}, status=400)
+                return
+
+            db.unblock_ip(target_ip)
+            self.send_json({"success": True, "message": f"IP {target_ip} unblocked."})
             return
 
         # 4. Public Batch Local Folder Compression
@@ -295,6 +393,11 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_DELETE(self):
+        client_ip = self.client_address[0]
+        if db.is_ip_blocked(client_ip):
+            self.send_json({"error": "Access denied. IP blocked by administrator."}, status=403)
+            return
+
         parsed = urlparse(self.path)
         # Protected Clear History (Requires Admin)
         if parsed.path == "/api/history":
