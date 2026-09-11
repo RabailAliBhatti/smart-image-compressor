@@ -20,3 +20,8 @@ images/*
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# PyInstaller build artifacts
+build/
+dist/
+*.spec
