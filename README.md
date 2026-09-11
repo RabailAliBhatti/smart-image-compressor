@@ -3,7 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
-[![Release](https://img.shields.io/badge/release-v1.0.0-indigo.svg)](https://github.com/)
+[![Release](https://img.shields.io/badge/release-v1.0.0-indigo.svg)](https://github.com/RabailAliBhatti/smart-image-compressor)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)]()
 
 > **Fast, offline-first batch image compressor and modern utility dashboard.**  
@@ -200,7 +200,7 @@ gh auth login
 gh repo create smart-image-compressor --public --source=. --remote=origin --push
 
 # Or add your existing GitHub remote URL manually:
-git remote add origin https://github.com/YOUR_USERNAME/smart-image-compressor.git
+git remote add origin https://github.com/RabailAliBhatti/smart-image-compressor.git
 git branch -M main
 git push -u origin main --tags
 ```
