@@ -1,5 +1,5 @@
-/* Smart Image Compressor - Offline Service Worker v2 */
-const CACHE_NAME = 'smart-compressor-v2';
+/* Smart Image Compressor - Offline Service Worker v3 */
+const CACHE_NAME = 'smart-compressor-v3';
 
 const STATIC_ASSETS = [
   './',
@@ -10,6 +10,7 @@ const STATIC_ASSETS = [
   './admin.js',
   './manifest.json',
   './icons/icon.svg',
+  './qrcode.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 ];

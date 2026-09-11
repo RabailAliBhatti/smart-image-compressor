@@ -25,6 +25,7 @@
   <meta name="apple-mobile-web-app-title" content="Compressor">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="qrcode.min.js"></script>
 </head>
 <body>
 
@@ -822,12 +823,11 @@
           Scan this QR code with your phone camera on the same Wi-Fi network to open the compressor on your phone or send images directly to this computer.
         </p>
 
-        <div id="qrCodeContainer" style="background: #ffffff; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-base); display: inline-flex; justify-content: center; align-items: center;">
-          <canvas id="qrCanvas" width="200" height="200"></canvas>
-        </div>
+        <div id="qrCodeContainer" style="background: #ffffff; padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-base); display: inline-flex; justify-content: center; align-items: center; min-width: 232px; min-height: 232px;"></div>
 
-        <div style="width: 100%; background: var(--bg-card-subtle); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); word-break: break-all; font-family: var(--font-mono); font-size: 0.82rem;">
-          <a id="mobileConnectUrl" href="#" target="_blank" style="color: var(--accent-primary); text-decoration: none;">Loading LAN IP...</a>
+        <div style="width: 100%; background: var(--bg-card-subtle); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+          <a id="mobileConnectUrl" href="#" target="_blank" style="color: var(--accent-primary); text-decoration: none; font-family: var(--font-mono); font-size: 0.82rem; word-break: break-all; text-align: left;">Loading LAN IP...</a>
+          <button type="button" class="btn-secondary" id="copyMobileUrlBtn" style="font-size: 0.75rem; padding: 0.3rem 0.6rem; white-space: nowrap;">Copy Link</button>
         </div>
 
         <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--text-faint);">

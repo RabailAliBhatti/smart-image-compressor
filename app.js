@@ -172,8 +172,9 @@
   const mobileConnectBtn = document.getElementById('mobileConnectBtn');
   const mobileConnectModal = document.getElementById('mobileConnectModal');
   const closeMobileConnectModalBtn = document.getElementById('closeMobileConnectModalBtn');
-  const qrCanvas = document.getElementById('qrCanvas');
+  const qrCodeContainer = document.getElementById('qrCodeContainer');
   const mobileConnectUrl = document.getElementById('mobileConnectUrl');
+  const copyMobileUrlBtn = document.getElementById('copyMobileUrlBtn');
 
   const toastShelf = document.getElementById('toastShelf');
 
@@ -2115,25 +2116,21 @@
     return { size, matrix };
   }
 
-  function renderQRCodeOnCanvas(canvas, text) {
-    if (!canvas) return;
-    const qr = generateQRCode(text);
-    const ctx = canvas.getContext('2d');
-    const size = qr.size;
-    const margin = 2;
-    const cellSize = Math.floor(canvas.width / (size + 2 * margin));
-    const offset = Math.floor((canvas.width - cellSize * (size + 2 * margin)) / 2);
-
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = '#000000';
-    for (let r = 0; r < size; r++) {
-      for (let c = 0; c < size; c++) {
-        if (qr.matrix[r][c] === 1) {
-          ctx.fillRect(offset + (c + margin) * cellSize, offset + (r + margin) * cellSize, cellSize, cellSize);
-        }
-      }
+  function renderQRCode(container, text) {
+    if (!container) return;
+    container.innerHTML = '';
+    if (window.QRCode) {
+      new QRCode(container, {
+        text: text,
+        width: 200,
+        height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    } else {
+      // Fallback text if library is still initializing
+      container.innerHTML = `<span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">${text}</span>`;
     }
   }
 
@@ -2522,8 +2519,26 @@
         mobileConnectUrl.href = targetUrl;
       }
 
-      if (qrCanvas) {
-        renderQRCodeOnCanvas(qrCanvas, targetUrl);
+      if (qrCodeContainer) {
+        renderQRCode(qrCodeContainer, targetUrl);
+      }
+    });
+  }
+
+  if (copyMobileUrlBtn && mobileConnectUrl) {
+    copyMobileUrlBtn.addEventListener('click', () => {
+      const url = mobileConnectUrl.href || mobileConnectUrl.textContent;
+      if (!url) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          showToast('Link copied to clipboard!');
+          copyMobileUrlBtn.textContent = 'Copied!';
+          setTimeout(() => { copyMobileUrlBtn.textContent = 'Copy Link'; }, 2000);
+        }).catch(() => {
+          showToast('Copied: ' + url);
+        });
+      } else {
+        showToast('Link: ' + url);
       }
     });
   }

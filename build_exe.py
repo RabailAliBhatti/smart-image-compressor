@@ -53,6 +53,7 @@ def build():
         ("admin.js", "."),
         ("sw.js", "."),
         ("manifest.json", "."),
+        ("qrcode.min.js", "."),
         ("icons", "icons"),
     ]
 
