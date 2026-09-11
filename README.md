@@ -1,49 +1,183 @@
-# Smart Image Compressor & Dashboard
+# Smart Image Compressor (`smart-image-compressor`)
 
-An intuitive, powerful image compression tool that shrinks images, documents, and certificates strictly under a target file size (default: **500 KB**).
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
+[![Release](https://img.shields.io/badge/release-v1.0.0-indigo.svg)](https://github.com/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)]()
 
-Designed for anyone to use effortlessly—no coding or command-line experience needed!
-
----
-
-## 🚀 Easy 1-Click Visual Dashboard (Recommended)
-
-1. Double-click [**`launch_dashboard.bat`**](file:///c:/Users/Rabail%20Ali/Desktop/Scripts/image-compressor/launch_dashboard.bat).
-2. Your browser will automatically open with the dashboard:
-   - **Drag & Drop**: Drop pictures or certificates directly into the browser.
-   - **Size Selector**: Choose presets (`100 KB`, `250 KB`, `500 KB`, `1 MB`) or drag the slider.
-   - **Format Selector**:
-     - **Auto (Keep Original)**: Preserves original format (PNG stays PNG, JPG stays JPG).
-     - **PNG**: Smart quantization and optimization preserving full transparency.
-     - **JPEG**: Universal compatibility.
-     - **WebP & AVIF**: High-efficiency next-gen compression.
-   - **Before / After Comparison**: Click any image thumbnail to inspect visual quality side-by-side.
-   - **Download Options**: Download individual images with matching format extensions or click **"Download All (ZIP)"**.
-   - **Batch Disk Compression**: Switch to the "Local Folder" tab to compress your entire `./images` folder on disk with 1 click!
-
-*Note: You can also open [**`index.html`**](file:///c:/Users/Rabail%20Ali/Desktop/Scripts/image-compressor/index.html) directly in any web browser without running any command.*
+> **Fast, offline-first batch image compressor and modern utility dashboard.**  
+> Effortlessly compress PNG, JPEG, WebP, and AVIF images strictly under **500 KB** (or any custom target size) for government portals, job applications, web performance, and document archiving—with zero visual degradation.
 
 ---
 
-## 💻 Terminal / Command Line Options
+## 🌟 Why Smart Image Compressor?
 
-If you prefer using the command line:
+Many government applications, university admissions, and job recruitment portals impose strict file size limits (such as **"under 500 KB"** or **"under 200 KB"**). Manually resizing photos, certificates, and ID cards with generic tools often blurs text or exceeds the upload ceiling.
 
-```powershell
-# Compress all images in ./images (keeping original formats) to under 500 KB:
-py compress_images.py -f auto -s 500
+**Smart Image Compressor** solves this completely:
+- **Strict Size Guarantee**: Files are iteratively optimized to stay strictly below your exact target KB limit.
+- **True Multi-Format Engine**:
+  - **PNG**: Smart 256-color palette quantization (`FASTOCTREE`) and progressive Lanczos scaling that preserves **alpha transparency**.
+  - **JPEG**: Precision binary-search quality optimization with high-resolution Lanczos downscaling.
+  - **WebP & AVIF**: Next-generation compression for maximum size reduction.
+  - **Auto**: Automatically preserves each file's native format (`.png` stays `.png`, `.jpg` stays `.jpg`).
+- **100% Offline & Private**: Runs entirely on your local machine. No photos, scans, or identity documents are ever uploaded to cloud servers.
+- **Dual Interface**: A clean, accessible **Web Dashboard** for non-technical users and a fast **CLI** for developers and power users.
 
-# Compress specifically to PNG format:
-py compress_images.py -f png -s 500
+---
 
-# Compress specifically to WebP format:
-py compress_images.py -f webp -s 500
+## 🚀 Quick Start
 
-# Custom folders:
-py compress_images.py -i "path/to/input" -o "path/to/output" -f auto
+### 1. Requirements
+- Python 3.10 or higher
+- Pillow (`PIL`):
+  ```bash
+  pip install Pillow
+  ```
 
-# Overwrite in-place:
-py compress_images.py --in-place
+### 2. Launch the Visual Dashboard (Recommended)
+
+#### On Windows:
+Double-click [**`launch_dashboard.bat`**](file:///c:/Users/Rabail%20Ali/Desktop/Scripts/image-compressor/launch_dashboard.bat).  
+*Your default web browser will automatically open with the dashboard at `http://localhost:5000`.*
+
+#### On Any OS (macOS / Linux / Windows Terminal):
+```bash
+# Start the local server
+python server.py
+
+# Or run with the Python launcher on Windows:
+py server.py
 ```
 
-Or double-click [**`run_compressor.bat`**](file:///c:/Users/Rabail%20Ali/Desktop/Scripts/image-compressor/run_compressor.bat).
+> **Standalone In-Browser Mode**: You can also double-click [**`index.html`**](file:///c:/Users/Rabail%20Ali/Desktop/Scripts/image-compressor/index.html) to run the dashboard directly in your browser with zero Python installation required.
+
+---
+
+## 🖥️ Dashboard Features
+
+| Feature | Description |
+| :--- | :--- |
+| **Drag & Drop Upload** | Drop single images, folders, or paste directly from your clipboard (`Ctrl+V`). |
+| **Numeric Target Size** | Direct number input (`[ 500 ] KB`) synchronized with precision slider and preset chips (`100 KB`, `250 KB`, `500 KB`, `1 MB`). |
+| **Format Selector** | Switch between **Auto (Keep Original)**, **PNG**, **JPEG**, **WebP**, and **AVIF**. |
+| **Side-by-Side Comparison** | Click any thumbnail to inspect original vs. compressed images with live size metrics before downloading. |
+| **One-Click Batch ZIP** | Download all compressed files in a single organized `.zip` archive. |
+| **Local Disk Processing** | Switch to the "Local Folder" tab to process your local `./images` directory into `./compressed_images` with 1 click. |
+
+---
+
+## 💻 Command Line Interface (CLI)
+
+The CLI tool (`compress_images.py`) is modular, scriptable, and can be integrated into automation pipelines.
+
+### Usage Examples
+
+```powershell
+# Default: Compresses all images in ./images to under 500 KB into ./compressed_images
+py compress_images.py
+
+# Keep each file's original format (PNG -> PNG, JPG -> JPG):
+py compress_images.py -f auto -s 500
+
+# Force all output files to compressed PNG format:
+py compress_images.py -f png -s 500
+
+# Force all output files to ultra-compact WebP format:
+py compress_images.py -f webp -s 300
+
+# Specify custom input and output folders:
+py compress_images.py -i "C:/Users/Documents/Scans" -o "C:/Users/Documents/Compressed" -s 200
+
+# Overwrite files in-place:
+py compress_images.py -i "path/to/folder" --in-place
+```
+
+### CLI Flags Reference
+
+| Flag | Short | Default | Description |
+| :--- | :---: | :---: | :--- |
+| `--size` | `-s` | `500.0` | Target maximum file size in Kilobytes (KB). |
+| `--format` | `-f` | `auto` | Target output format (`auto`, `png`, `jpeg`, `webp`). |
+| `--input` | `-i` | `./images` | Input directory containing images to compress. |
+| `--output` | `-o` | `./compressed_images` | Output directory where compressed files will be saved. |
+| `--in-place` | - | `False` | Overwrite original images directly in-place. |
+
+---
+
+## ⚙️ How the Compression Algorithm Works
+
+```mermaid
+flowchart TD
+    A[Input Image] --> B{Size <= Target KB?}
+    B -- Yes & Format Matches --> C[Copy Direct / Preserve 100% Quality]
+    B -- No --> D[Auto EXIF Orientation Fix]
+    D --> E{Selected Format}
+    
+    E -- PNG --> F[Test Full Size Level 9]
+    F --> G{Size <= Target?}
+    G -- Yes --> H[Save Output]
+    G -- No --> I[FASTOCTREE 256-Color Quantization]
+    I --> J{Size <= Target?}
+    J -- Yes --> H
+    J -- No --> K[Lanczos Downscaling + Quantize Loop]
+    K --> H
+
+    E -- JPEG / WebP --> L[Binary Search Quality 95 down to 25]
+    L --> M{Size <= Target?}
+    M -- Yes --> H
+    M -- No --> N[Lanczos Progressive Scale Down]
+    N --> L
+```
+
+1. **Orientation Correction**: Automatically transposes EXIF orientation tags so scanned certificates and phone photos are never rotated sideways or upside-down.
+2. **Quality Binary Search**: For JPEG and WebP, performs a 6-step binary search across compression quality levels to find the highest visual quality that satisfies the target size.
+3. **Adaptive Quantization**: For PNGs, applies FASTOCTREE color quantization (reducing 24-bit RGB to optimized 8-bit indexed palette while preserving full alpha transparency).
+4. **Lanczos Resampling**: If maximum compression at native resolution still exceeds the size threshold (e.g. 35-megapixel camera photos), the image dimensions are downscaled smoothly using high-fidelity Lanczos filtering.
+
+---
+
+## 📂 Project Structure
+
+```
+smart-image-compressor/
+├── .gitignore               # Security-tuned: excludes personal images & caches
+├── LICENSE                  # MIT Open Source License
+├── README.md                # Comprehensive documentation
+├── app.js                   # Client-side canvas compressor & dashboard logic
+├── compress_images.py       # Core Python compression engine & CLI
+├── images/                  # Source images directory (.gitkeep tracked)
+├── index.html               # Semantic, accessible web dashboard
+├── launch_dashboard.bat     # 1-click Windows launcher for Web Dashboard
+├── run_compressor.bat       # 1-click Windows launcher for CLI
+├── server.py                # Zero-dependency local web server & batch API
+└── styles.css               # Clean, high-contrast utility design system
+```
+
+---
+
+## 🌐 Publishing to GitHub
+
+To push this repository to your GitHub account:
+
+```bash
+# 1. Log in to GitHub (if not already authenticated)
+gh auth login
+
+# 2. Create the remote repository with the SEO-optimized name
+gh repo create smart-image-compressor --public --source=. --remote=origin --push
+
+# Or add your existing GitHub remote URL manually:
+git remote add origin https://github.com/YOUR_USERNAME/smart-image-compressor.git
+git branch -M main
+git push -u origin main --tags
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for details.
+
+Developed with precision by **Rabail Ali Bhatti** ([rabailalibhatti500@gmail.com](mailto:rabailalibhatti500@gmail.com)).
