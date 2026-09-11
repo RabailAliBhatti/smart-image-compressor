@@ -9,11 +9,14 @@ import csv
 import io
 import hashlib
 import hmac
-import secrets
+import sys
 from pathlib import Path
 from datetime import datetime
 
-DB_PATH = Path(__file__).resolve().parent / "compressor.db"
+if getattr(sys, 'frozen', False):
+    DB_PATH = Path(sys.executable).resolve().parent / "compressor.db"
+else:
+    DB_PATH = Path(__file__).resolve().parent / "compressor.db"
 
 def get_connection() -> sqlite3.Connection:
     """Return a connection with row_factory enabled."""

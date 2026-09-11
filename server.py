@@ -8,6 +8,7 @@ Zero external dependencies (uses Python standard library).
 import os
 import sys
 import json
+import base64
 import socket
 import secrets
 import webbrowser
@@ -20,14 +21,35 @@ from pathlib import Path
 from compress_images import compress_single_image, format_size, SUPPORTED_EXTENSIONS
 import db
 
-BASE_DIR = Path(__file__).resolve().parent
-INPUT_DIR = BASE_DIR / "images"
-OUTPUT_DIR = BASE_DIR / "compressed_images"
+if getattr(sys, 'frozen', False):
+    # Running in a PyInstaller executable bundle
+    BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
+    DATA_DIR = Path(sys.executable).resolve().parent
+else:
+    BASE_DIR = Path(__file__).resolve().parent
+    DATA_DIR = BASE_DIR
+
+INPUT_DIR = DATA_DIR / "images"
+OUTPUT_DIR = DATA_DIR / "compressed_images"
 
 # Admin Authentication Configuration
 # Default password is 'admin123', can be overridden via ADMIN_PASSWORD environment variable
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 ACTIVE_ADMIN_TOKENS = set()
+
+def get_local_ip() -> str:
+    """Detect the host machine's LAN IP address on the local Wi-Fi/Ethernet network."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except Exception:
+            return "127.0.0.1"
 
 def verify_admin_auth(handler) -> bool:
     """Check if request has a valid admin session token."""
@@ -87,6 +109,17 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
                 "input_dir": str(INPUT_DIR.resolve()),
                 "output_dir": str(OUTPUT_DIR.resolve()),
                 "image_count": image_count,
+            })
+            return
+
+        # 1b. Public Network Info (for Phone QR upload)
+        if path == "/api/network-info":
+            local_ip = get_local_ip()
+            server_port = self.server.server_address[1]
+            self.send_json({
+                "local_ip": local_ip,
+                "port": server_port,
+                "url": f"http://{local_ip}:{server_port}"
             })
             return
 
@@ -174,6 +207,52 @@ class CompressorRequestHandler(SimpleHTTPRequestHandler):
             payload = json.loads(body) if body else {}
         except Exception:
             payload = {}
+
+        # 0. Mobile Direct Upload Endpoint
+        if path == "/api/upload":
+            files = payload.get("files", [])
+            if not files and payload.get("data") and payload.get("filename"):
+                files = [{"name": payload.get("filename"), "data": payload.get("data")}]
+
+            if not files:
+                self.send_json({"error": "No files provided"}, status=400)
+                return
+
+            INPUT_DIR.mkdir(parents=True, exist_ok=True)
+            saved_files = []
+
+            for f in files:
+                fname = os.path.basename(f.get("name", "photo.jpg"))
+                raw_data = f.get("data", "")
+                if "," in raw_data:
+                    raw_data = raw_data.split(",", 1)[1]
+
+                try:
+                    binary_bytes = base64.b64decode(raw_data)
+                except Exception:
+                    continue
+
+                dest_path = INPUT_DIR / fname
+                if dest_path.exists():
+                    stem = dest_path.stem
+                    suffix = dest_path.suffix
+                    dest_path = INPUT_DIR / f"{stem}_{secrets.token_hex(3)}{suffix}"
+
+                with open(dest_path, "wb") as out_f:
+                    out_f.write(binary_bytes)
+
+                saved_files.append({
+                    "filename": dest_path.name,
+                    "size": len(binary_bytes),
+                    "path": f"images/{dest_path.name}"
+                })
+
+            self.send_json({
+                "success": True,
+                "saved_count": len(saved_files),
+                "files": saved_files
+            })
+            return
 
         # 1. Admin Login Endpoint (with Rate Limiting & PBKDF2 Password Check)
         if path == "/api/admin/login":
@@ -426,21 +505,24 @@ def find_available_port(start_port: int = 5000) -> int:
 
 def run_server(port: int = 5000, open_browser: bool = True):
     port = find_available_port(port)
-    server_address = ("127.0.0.1", port)
+    server_address = ("0.0.0.0", port)
     httpd = HTTPServer(server_address, CompressorRequestHandler)
-    url = f"http://localhost:{port}"
+    local_url = f"http://localhost:{port}"
+    lan_ip = get_local_ip()
+    lan_url = f"http://{lan_ip}:{port}"
 
     print("=" * 65)
     print("  SMART IMAGE COMPRESSOR & SECURE ADMIN SERVER")
-    print(f"  Public Dashboard: {url}")
-    print(f"  Admin Portal    : {url}/admin.html")
+    print(f"  Local Access    : {local_url}")
+    print(f"  Mobile / LAN    : {lan_url}")
+    print(f"  Admin Portal    : {local_url}/admin.html")
     print(f"  Default Password: {ADMIN_PASSWORD}")
     print(f"  Database        : {db.DB_PATH.resolve()}")
     print("  Press Ctrl+C to stop the server.")
     print("=" * 65)
 
     if open_browser:
-        threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+        threading.Timer(0.8, lambda: webbrowser.open(local_url)).start()
 
     try:
         httpd.serve_forever()

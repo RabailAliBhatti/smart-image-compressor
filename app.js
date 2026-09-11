@@ -143,6 +143,38 @@
   const pdfTargetSizeSelect = document.getElementById('pdfTargetSizeSelect');
   const generatePdfBtn = document.getElementById('generatePdfBtn');
 
+  // SSIM and PSNR Quality Metric Elements
+  const ssimBadge = document.getElementById('ssimBadge');
+  const psnrBadge = document.getElementById('psnrBadge');
+
+  // Interactive Crop & Rotate Elements
+  const cropModal = document.getElementById('cropModal');
+  const closeCropModalBtn = document.getElementById('closeCropModalBtn');
+  const cancelCropBtn = document.getElementById('cancelCropBtn');
+  const applyCropBtn = document.getElementById('applyCropBtn');
+  const cropCanvasWrapper = document.getElementById('cropCanvasWrapper');
+  const cropCanvas = document.getElementById('cropCanvas');
+  const cropBox = document.getElementById('cropBox');
+  const cropFileName = document.getElementById('cropFileName');
+  const cropSelectionDims = document.getElementById('cropSelectionDims');
+  const cropRotateLeftBtn = document.getElementById('cropRotateLeftBtn');
+  const cropRotateRightBtn = document.getElementById('cropRotateRightBtn');
+  const cropFlipHBtn = document.getElementById('cropFlipHBtn');
+  const cropResetBtn = document.getElementById('cropResetBtn');
+  const cropRatioBtns = document.querySelectorAll('#cropRatioGroup .crop-btn');
+
+  // Preset Export / Import Elements
+  const exportPresetsBtn = document.getElementById('exportPresetsBtn');
+  const importPresetsBtn = document.getElementById('importPresetsBtn');
+  const importPresetsInput = document.getElementById('importPresetsInput');
+
+  // Mobile Connect Modal Elements
+  const mobileConnectBtn = document.getElementById('mobileConnectBtn');
+  const mobileConnectModal = document.getElementById('mobileConnectModal');
+  const closeMobileConnectModalBtn = document.getElementById('closeMobileConnectModalBtn');
+  const qrCanvas = document.getElementById('qrCanvas');
+  const mobileConnectUrl = document.getElementById('mobileConnectUrl');
+
   const toastShelf = document.getElementById('toastShelf');
 
   // Format Colors for Charts
@@ -453,6 +485,89 @@
   }
 
   renderCustomProfiles();
+
+  // --- Preset Export & Import ---
+  if (exportPresetsBtn) {
+    exportPresetsBtn.addEventListener('click', () => {
+      const profiles = getCustomProfiles();
+      const exportData = {
+        app: 'SmartImageCompressor',
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        currentSettings: {
+          targetSizeKb,
+          selectedFormat,
+          maxWidth: maxWidthInput ? maxWidthInput.value : '',
+          maxHeight: maxHeightInput ? maxHeightInput.value : ''
+        },
+        profiles
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `compression_presets_${Date.now()}.json`;
+      link.click();
+      showToast(`Exported ${profiles.length} preset(s) to JSON.`);
+    });
+  }
+
+  if (importPresetsBtn && importPresetsInput) {
+    importPresetsBtn.addEventListener('click', () => {
+      importPresetsInput.value = '';
+      importPresetsInput.click();
+    });
+
+    importPresetsInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          const incomingProfiles = Array.isArray(parsed) ? parsed : (parsed.profiles || []);
+          if (!Array.isArray(incomingProfiles) || incomingProfiles.length === 0) {
+            showToast('No valid presets found in JSON file.');
+            return;
+          }
+
+          const currentProfiles = getCustomProfiles();
+          let addedCount = 0;
+
+          incomingProfiles.forEach(p => {
+            if (p && p.name && p.size) {
+              const profileObj = {
+                id: p.id || ('cp_' + Math.random().toString(36).substring(2, 9)),
+                name: String(p.name).trim(),
+                size: parseInt(p.size, 10),
+                format: p.format || 'auto',
+                width: p.width ? parseInt(p.width, 10) : null,
+                height: p.height ? parseInt(p.height, 10) : null
+              };
+              const exists = currentProfiles.some(cp => cp.name.toLowerCase() === profileObj.name.toLowerCase());
+              if (!exists) {
+                currentProfiles.push(profileObj);
+                addedCount++;
+              }
+            }
+          });
+
+          if (addedCount > 0) {
+            saveCustomProfiles(currentProfiles);
+            renderCustomProfiles();
+            showToast(`Imported ${addedCount} new preset(s)!`);
+          } else {
+            showToast('All presets from file are already present.');
+          }
+        } catch (err) {
+          console.error('Preset import error:', err);
+          showToast('Failed to parse preset JSON file.');
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
 
   // Size Controls Synchronization
   function setTargetSize(val) {
@@ -1180,6 +1295,12 @@
       <td><span class="badge-tag badge-neutral" id="badge_${item.id}">Ready to Convert</span></td>
       <td>
         <div class="row-actions" style="justify-content: flex-end;">
+          <button type="button" class="btn-table-icon" id="cropBtn_${item.id}" title="Crop & Rotate Image" style="color: var(--text-muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"></path>
+              <path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"></path>
+            </svg>
+          </button>
           <button type="button" class="btn-table-icon" id="rowConvertBtn_${item.id}" title="Convert this image now" style="color: var(--accent-primary);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
@@ -1265,6 +1386,11 @@
     });
 
     tableBody.appendChild(tr);
+
+    const cropBtn = document.getElementById(`cropBtn_${item.id}`);
+    if (cropBtn) {
+      cropBtn.addEventListener('click', () => openCropModal(item));
+    }
 
     const rowConvertBtn = document.getElementById(`rowConvertBtn_${item.id}`);
     if (rowConvertBtn) {
@@ -1642,6 +1768,35 @@
       curtainExifBadge.className = 'badge-tag badge-neutral';
     }
 
+    // Calculate SSIM & PSNR visual metrics
+    if (ssimBadge && psnrBadge) {
+      ssimBadge.textContent = 'SSIM: Calculating...';
+      psnrBadge.textContent = 'PSNR: Calculating...';
+      ssimBadge.className = 'badge-tag badge-quality';
+      psnrBadge.className = 'badge-tag badge-quality';
+
+      const origImgForMetric = new Image();
+      const compImgForMetric = new Image();
+      origImgForMetric.crossOrigin = 'anonymous';
+      compImgForMetric.crossOrigin = 'anonymous';
+
+      Promise.all([
+        new Promise(res => { origImgForMetric.onload = () => res(origImgForMetric); origImgForMetric.src = item.origUrl; }),
+        new Promise(res => { compImgForMetric.onload = () => res(compImgForMetric); compImgForMetric.src = item.compUrl || item.origUrl; })
+      ]).then(([i1, i2]) => calculateSSIMAndPSNR(i1, i2))
+        .then(metrics => {
+          ssimBadge.textContent = `SSIM: ${metrics.ssim.toFixed(3)}`;
+          psnrBadge.textContent = `PSNR: ${metrics.psnr >= 80 ? '>60' : metrics.psnr.toFixed(1)} dB`;
+
+          if (metrics.ssim >= 0.94) ssimBadge.classList.add('high-quality');
+          if (metrics.psnr >= 35) psnrBadge.classList.add('high-quality');
+        })
+        .catch(() => {
+          ssimBadge.textContent = 'SSIM: N/A';
+          psnrBadge.textContent = 'PSNR: N/A';
+        });
+    }
+
     // Reset divider to 50% and zoom to 1
     curtainDivider.style.left = '50%';
     curtainClippedWrap.style.clipPath = 'polygon(50% 0, 100% 0, 100% 100%, 50% 100%)';
@@ -1692,6 +1847,697 @@
     }
   });
 
+
+  // --- SSIM & PSNR Visual Quality Metric Engine ---
+  function calculateSSIMAndPSNR(img1, img2) {
+    return new Promise((resolve) => {
+      const size = 256;
+      const c1 = 6.5025;
+      const c2 = 58.5225;
+
+      const canvas1 = document.createElement('canvas');
+      canvas1.width = size;
+      canvas1.height = size;
+      const ctx1 = canvas1.getContext('2d');
+      ctx1.drawImage(img1, 0, 0, size, size);
+      const data1 = ctx1.getImageData(0, 0, size, size).data;
+
+      const canvas2 = document.createElement('canvas');
+      canvas2.width = size;
+      canvas2.height = size;
+      const ctx2 = canvas2.getContext('2d');
+      ctx2.drawImage(img2, 0, 0, size, size);
+      const data2 = ctx2.getImageData(0, 0, size, size).data;
+
+      const n = size * size;
+      let sum1 = 0, sum2 = 0;
+      let sse = 0;
+
+      const lum1 = new Float32Array(n);
+      const lum2 = new Float32Array(n);
+
+      for (let i = 0, j = 0; i < data1.length; i += 4, j++) {
+        const y1 = 0.299 * data1[i] + 0.587 * data1[i + 1] + 0.114 * data1[i + 2];
+        const y2 = 0.299 * data2[i] + 0.587 * data2[i + 1] + 0.114 * data2[i + 2];
+        lum1[j] = y1;
+        lum2[j] = y2;
+        sum1 += y1;
+        sum2 += y2;
+        const diff = y1 - y2;
+        sse += diff * diff;
+      }
+
+      const mse = sse / n;
+      let psnr = 100;
+      if (mse > 0.0001) {
+        psnr = 10 * Math.log10((255 * 255) / mse);
+      }
+
+      const mean1 = sum1 / n;
+      const mean2 = sum2 / n;
+
+      let var1 = 0, var2 = 0, cov = 0;
+      for (let j = 0; j < n; j++) {
+        const d1 = lum1[j] - mean1;
+        const d2 = lum2[j] - mean2;
+        var1 += d1 * d1;
+        var2 += d2 * d2;
+        cov += d1 * d2;
+      }
+
+      var1 /= (n - 1);
+      var2 /= (n - 1);
+      cov /= (n - 1);
+
+      const ssim = ((2 * mean1 * mean2 + c1) * (2 * cov + c2)) /
+                   ((mean1 * mean1 + mean2 * mean2 + c1) * (var1 + var2 + c2));
+
+      resolve({
+        ssim: Math.max(0, Math.min(1, ssim)),
+        psnr: Math.max(0, psnr)
+      });
+    });
+  }
+
+  // --- Standalone Zero-Dependency QR Code Generator ---
+  function generateQRCode(text) {
+    const textBytes = [];
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i);
+      if (code < 128) textBytes.push(code);
+      else if (code < 2048) {
+        textBytes.push(192 | (code >> 6), 128 | (code & 63));
+      } else {
+        textBytes.push(224 | (code >> 12), 128 | ((code >> 6) & 63), 128 | (code & 63));
+      }
+    }
+
+    const vCapL = [0, 17, 32, 53, 78];
+    let version = 1;
+    while (version <= 4 && textBytes.length > vCapL[version]) {
+      version++;
+    }
+    if (version > 4) version = 4;
+
+    const totalDataBytes = [0, 19, 34, 55, 80][version];
+    const ecBytesPerBlock = [0, 7, 10, 15, 20][version];
+    const dataBytesCount = totalDataBytes - ecBytesPerBlock;
+
+    const bits = [];
+    function pushBits(val, len) {
+      for (let i = len - 1; i >= 0; i--) {
+        bits.push((val >> i) & 1);
+      }
+    }
+
+    pushBits(4, 4);
+    pushBits(textBytes.length, 8);
+    for (const b of textBytes) pushBits(b, 8);
+
+    const maxBits = dataBytesCount * 8;
+    const termLen = Math.min(4, maxBits - bits.length);
+    for (let i = 0; i < termLen; i++) bits.push(0);
+    while (bits.length % 8 !== 0) bits.push(0);
+
+    const dataBytes = [];
+    for (let i = 0; i < bits.length; i += 8) {
+      let b = 0;
+      for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j];
+      dataBytes.push(b);
+    }
+
+    const padBytes = [0xEC, 0x11];
+    let padIdx = 0;
+    while (dataBytes.length < dataBytesCount) {
+      dataBytes.push(padBytes[padIdx % 2]);
+      padIdx++;
+    }
+
+    const exp = new Uint8Array(512);
+    const log = new Uint8Array(256);
+    let x = 1;
+    for (let i = 0; i < 255; i++) {
+      exp[i] = x;
+      exp[i + 255] = x;
+      log[x] = i;
+      x = (x << 1) ^ (x >= 128 ? 0x11d : 0);
+    }
+
+    function gfMul(a, b) {
+      if (a === 0 || b === 0) return 0;
+      return exp[log[a] + log[b]];
+    }
+
+    let genPoly = [1];
+    for (let i = 0; i < ecBytesPerBlock; i++) {
+      const nextPoly = new Array(genPoly.length + 1).fill(0);
+      const factor = exp[i];
+      for (let j = 0; j < genPoly.length; j++) {
+        nextPoly[j] ^= gfMul(genPoly[j], factor);
+        nextPoly[j + 1] ^= genPoly[j];
+      }
+      genPoly = nextPoly;
+    }
+
+    const ec = new Array(ecBytesPerBlock).fill(0);
+    for (let i = 0; i < dataBytes.length; i++) {
+      const lead = dataBytes[i] ^ ec[0];
+      ec.shift();
+      ec.push(0);
+      if (lead !== 0) {
+        for (let j = 0; j < ecBytesPerBlock; j++) {
+          ec[j] ^= gfMul(genPoly[j], lead);
+        }
+      }
+    }
+
+    const allBytes = dataBytes.concat(ec);
+    const size = 17 + 4 * version;
+    const matrix = Array.from({ length: size }, () => new Array(size).fill(null));
+    const isReserved = Array.from({ length: size }, () => new Array(size).fill(false));
+
+    function setModule(r, c, val, reserved = true) {
+      if (r >= 0 && r < size && c >= 0 && c < size) {
+        matrix[r][c] = val ? 1 : 0;
+        if (reserved) isReserved[r][c] = true;
+      }
+    }
+
+    function drawFinder(row, col) {
+      for (let r = -1; r <= 7; r++) {
+        for (let c = -1; c <= 7; c++) {
+          const mr = row + r;
+          const mc = col + c;
+          if (mr >= 0 && mr < size && mc >= 0 && mc < size) {
+            if (r >= 0 && r <= 6 && c >= 0 && c <= 6) {
+              const isBlack = (r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4));
+              setModule(mr, mc, isBlack);
+            } else {
+              setModule(mr, mc, false);
+            }
+          }
+        }
+      }
+    }
+
+    drawFinder(0, 0);
+    drawFinder(0, size - 7);
+    drawFinder(size - 7, 0);
+
+    for (let i = 8; i < size - 8; i++) {
+      setModule(6, i, i % 2 === 0);
+      setModule(i, 6, i % 2 === 0);
+    }
+
+    const alignPos = [0, 0, 18, 22, 26][version];
+    if (alignPos > 0) {
+      for (let dr = -2; dr <= 2; dr++) {
+        for (let dc = -2; dc <= 2; dc++) {
+          const isB = Math.max(Math.abs(dr), Math.abs(dc)) !== 1;
+          setModule(alignPos + dr, alignPos + dc, isB);
+        }
+      }
+    }
+
+    setModule(4 * version + 9, 8, true);
+
+    for (let i = 0; i < 9; i++) {
+      if (!isReserved[8][i]) setModule(8, i, 0);
+      if (!isReserved[i][8]) setModule(i, 8, 0);
+    }
+    for (let i = size - 8; i < size; i++) {
+      if (!isReserved[8][i]) setModule(8, i, 0);
+    }
+    for (let i = size - 7; i < size; i++) {
+      if (!isReserved[i][8]) setModule(i, 8, 0);
+    }
+
+    const finalBits = [];
+    for (const b of allBytes) {
+      for (let i = 7; i >= 0; i--) finalBits.push((b >> i) & 1);
+    }
+    const remainderBitsCount = [0, 0, 7, 7, 7][version] || 0;
+    for (let i = 0; i < remainderBitsCount; i++) finalBits.push(0);
+
+    let bitIdx = 0;
+    let dir = -1;
+    let c = size - 1;
+
+    while (c > 0) {
+      if (c === 6) c--;
+      for (let step = 0; step < size; step++) {
+        const row = dir === -1 ? size - 1 - step : step;
+        for (let col = c; col >= c - 1; col--) {
+          if (!isReserved[row][col]) {
+            let b = bitIdx < finalBits.length ? finalBits[bitIdx++] : 0;
+            if ((row + col) % 2 === 0) b ^= 1;
+            matrix[row][col] = b;
+          }
+        }
+      }
+      dir = -dir;
+      c -= 2;
+    }
+
+    const formatInfo = 0x77c4;
+    for (let i = 0; i < 15; i++) {
+      const bit = (formatInfo >> i) & 1;
+      if (i < 6) setModule(8, i, bit, false);
+      else if (i === 6) setModule(8, 7, bit, false);
+      else if (i === 7) setModule(8, 8, bit, false);
+      else if (i === 8) setModule(7, 8, bit, false);
+      else setModule(14 - i, 8, bit, false);
+
+      if (i < 8) setModule(size - 1 - i, 8, bit, false);
+      else setModule(8, size - 15 + i, bit, false);
+    }
+
+    return { size, matrix };
+  }
+
+  function renderQRCodeOnCanvas(canvas, text) {
+    if (!canvas) return;
+    const qr = generateQRCode(text);
+    const ctx = canvas.getContext('2d');
+    const size = qr.size;
+    const margin = 2;
+    const cellSize = Math.floor(canvas.width / (size + 2 * margin));
+    const offset = Math.floor((canvas.width - cellSize * (size + 2 * margin)) / 2);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#000000';
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        if (qr.matrix[r][c] === 1) {
+          ctx.fillRect(offset + (c + margin) * cellSize, offset + (r + margin) * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+  }
+
+  // --- Interactive Canvas Crop & Rotate Engine ---
+  let activeCropItem = null;
+  let cropImg = null;
+  let cropRotation = 0;
+  let cropFlippedH = false;
+  let cropAspectRatio = null;
+  let cropBoxState = { x: 20, y: 20, w: 200, h: 200 };
+  let isDraggingCropBox = false;
+  let activeCropHandle = null;
+  let dragStartPos = { x: 0, y: 0 };
+  let boxStartPos = { x: 0, y: 0, w: 0, h: 0 };
+
+  function openCropModal(item) {
+    activeCropItem = item;
+    cropRotation = 0;
+    cropFlippedH = false;
+    cropAspectRatio = null;
+    if (cropFileName) cropFileName.textContent = item.name;
+
+    cropRatioBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.ratio === 'free');
+    });
+
+    cropModal.classList.add('open');
+    cropModal.style.display = 'flex';
+
+    cropImg = new Image();
+    cropImg.onload = () => {
+      initCropCanvasAndBox();
+    };
+    cropImg.src = item.origUrl;
+  }
+
+  function closeCropModal() {
+    cropModal.classList.remove('open');
+    cropModal.style.display = 'none';
+    activeCropItem = null;
+    cropImg = null;
+  }
+
+  if (closeCropModalBtn) closeCropModalBtn.addEventListener('click', closeCropModal);
+  if (cancelCropBtn) cancelCropBtn.addEventListener('click', closeCropModal);
+  if (cropModal) {
+    cropModal.addEventListener('click', (e) => {
+      if (e.target === cropModal) closeCropModal();
+    });
+  }
+
+  function getTransformedDims(naturalW, naturalH, rotation) {
+    if (rotation === 90 || rotation === 270) {
+      return { w: naturalH, h: naturalW };
+    }
+    return { w: naturalW, h: naturalH };
+  }
+
+  function initCropCanvasAndBox() {
+    if (!cropImg || !cropCanvasWrapper) return;
+
+    const wrapperRect = cropCanvasWrapper.getBoundingClientRect();
+    const maxW = wrapperRect.width > 0 ? wrapperRect.width - 32 : 720;
+    const maxH = wrapperRect.height > 0 ? wrapperRect.height - 32 : 440;
+
+    const tDims = getTransformedDims(cropImg.naturalWidth, cropImg.naturalHeight, cropRotation);
+    const scale = Math.min(maxW / tDims.w, maxH / tDims.h, 1);
+
+    const canvasW = Math.max(120, Math.round(tDims.w * scale));
+    const canvasH = Math.max(120, Math.round(tDims.h * scale));
+
+    cropCanvas.width = canvasW;
+    cropCanvas.height = canvasH;
+
+    drawTransformedCropImage();
+
+    let initW = Math.round(canvasW * 0.75);
+    let initH = Math.round(canvasH * 0.75);
+
+    if (cropAspectRatio) {
+      if (initW / initH > cropAspectRatio) {
+        initW = Math.round(initH * cropAspectRatio);
+      } else {
+        initH = Math.round(initW / cropAspectRatio);
+      }
+    }
+
+    const initX = Math.round((canvasW - initW) / 2);
+    const initY = Math.round((canvasH - initH) / 2);
+
+    cropBoxState = { x: initX, y: initY, w: initW, h: initH };
+    updateCropBoxDOM();
+  }
+
+  function drawTransformedCropImage() {
+    const ctx = cropCanvas.getContext('2d');
+    const cw = cropCanvas.width;
+    const ch = cropCanvas.height;
+
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.save();
+    ctx.translate(cw / 2, ch / 2);
+    ctx.rotate((cropRotation * Math.PI) / 180);
+    if (cropFlippedH) {
+      ctx.scale(-1, 1);
+    }
+
+    const isRotated = (cropRotation === 90 || cropRotation === 270);
+    const dw = isRotated ? ch : cw;
+    const dh = isRotated ? cw : ch;
+
+    ctx.drawImage(cropImg, -dw / 2, -dh / 2, dw, dh);
+    ctx.restore();
+  }
+
+  function updateCropBoxDOM() {
+    const canvasRect = cropCanvas.getBoundingClientRect();
+    const wrapperRect = cropCanvasWrapper.getBoundingClientRect();
+
+    const canvasOffsetX = canvasRect.left - wrapperRect.left;
+    const canvasOffsetY = canvasRect.top - wrapperRect.top;
+
+    cropBox.style.left = `${canvasOffsetX + cropBoxState.x}px`;
+    cropBox.style.top = `${canvasOffsetY + cropBoxState.y}px`;
+    cropBox.style.width = `${cropBoxState.w}px`;
+    cropBox.style.height = `${cropBoxState.h}px`;
+
+    if (cropImg && cropCanvas.width > 0) {
+      const tDims = getTransformedDims(cropImg.naturalWidth, cropImg.naturalHeight, cropRotation);
+      const ratio = tDims.w / cropCanvas.width;
+      const realW = Math.round(cropBoxState.w * ratio);
+      const realH = Math.round(cropBoxState.h * ratio);
+      if (cropSelectionDims) {
+        cropSelectionDims.textContent = `${realW} × ${realH} px`;
+      }
+    }
+  }
+
+  if (cropBox) {
+    cropBox.addEventListener('pointerdown', (e) => {
+      const handle = e.target.getAttribute('data-handle');
+      if (handle) {
+        activeCropHandle = handle;
+      } else {
+        isDraggingCropBox = true;
+      }
+      dragStartPos = { x: e.clientX, y: e.clientY };
+      boxStartPos = { ...cropBoxState };
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  }
+
+  window.addEventListener('pointermove', (e) => {
+    if (!isDraggingCropBox && !activeCropHandle) return;
+
+    const dx = e.clientX - dragStartPos.x;
+    const dy = e.clientY - dragStartPos.y;
+    const cw = cropCanvas.width;
+    const ch = cropCanvas.height;
+
+    if (isDraggingCropBox) {
+      let newX = Math.max(0, Math.min(cw - boxStartPos.w, boxStartPos.x + dx));
+      let newY = Math.max(0, Math.min(ch - boxStartPos.h, boxStartPos.y + dy));
+      cropBoxState.x = Math.round(newX);
+      cropBoxState.y = Math.round(newY);
+      updateCropBoxDOM();
+    } else if (activeCropHandle) {
+      let x = boxStartPos.x;
+      let y = boxStartPos.y;
+      let w = boxStartPos.w;
+      let h = boxStartPos.h;
+
+      if (activeCropHandle === 'se') {
+        w = Math.max(40, Math.min(cw - x, boxStartPos.w + dx));
+        if (cropAspectRatio) {
+          h = Math.round(w / cropAspectRatio);
+          if (y + h > ch) {
+            h = ch - y;
+            w = Math.round(h * cropAspectRatio);
+          }
+        } else {
+          h = Math.max(40, Math.min(ch - y, boxStartPos.h + dy));
+        }
+      } else if (activeCropHandle === 'sw') {
+        w = Math.max(40, Math.min(boxStartPos.x + boxStartPos.w, boxStartPos.w - dx));
+        x = boxStartPos.x + (boxStartPos.w - w);
+        if (cropAspectRatio) {
+          h = Math.round(w / cropAspectRatio);
+          if (y + h > ch) {
+            h = ch - y;
+            w = Math.round(h * cropAspectRatio);
+            x = boxStartPos.x + (boxStartPos.w - w);
+          }
+        } else {
+          h = Math.max(40, Math.min(ch - y, boxStartPos.h + dy));
+        }
+      } else if (activeCropHandle === 'ne') {
+        w = Math.max(40, Math.min(cw - x, boxStartPos.w + dx));
+        if (cropAspectRatio) {
+          h = Math.round(w / cropAspectRatio);
+          y = boxStartPos.y + (boxStartPos.h - h);
+          if (y < 0) {
+            y = 0;
+            h = boxStartPos.y + boxStartPos.h;
+            w = Math.round(h * cropAspectRatio);
+          }
+        } else {
+          h = Math.max(40, Math.min(boxStartPos.y + boxStartPos.h, boxStartPos.h - dy));
+          y = boxStartPos.y + (boxStartPos.h - h);
+        }
+      } else if (activeCropHandle === 'nw') {
+        w = Math.max(40, Math.min(boxStartPos.x + boxStartPos.w, boxStartPos.w - dx));
+        x = boxStartPos.x + (boxStartPos.w - w);
+        if (cropAspectRatio) {
+          h = Math.round(w / cropAspectRatio);
+          y = boxStartPos.y + (boxStartPos.h - h);
+          if (y < 0) {
+            y = 0;
+            h = boxStartPos.y + boxStartPos.h;
+            w = Math.round(h * cropAspectRatio);
+            x = boxStartPos.x + (boxStartPos.w - w);
+          }
+        } else {
+          h = Math.max(40, Math.min(boxStartPos.y + boxStartPos.h, boxStartPos.h - dy));
+          y = boxStartPos.y + (boxStartPos.h - h);
+        }
+      }
+
+      cropBoxState = { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
+      updateCropBoxDOM();
+    }
+  });
+
+  window.addEventListener('pointerup', () => {
+    isDraggingCropBox = false;
+    activeCropHandle = null;
+  });
+
+  cropRatioBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      cropRatioBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const ratioAttr = btn.dataset.ratio;
+      if (ratioAttr === '1:1') cropAspectRatio = 1;
+      else if (ratioAttr === '35:45') cropAspectRatio = 35 / 45;
+      else if (ratioAttr === '4:3') cropAspectRatio = 4 / 3;
+      else if (ratioAttr === '16:9') cropAspectRatio = 16 / 9;
+      else cropAspectRatio = null;
+
+      initCropCanvasAndBox();
+    });
+  });
+
+  if (cropRotateLeftBtn) {
+    cropRotateLeftBtn.addEventListener('click', () => {
+      cropRotation = (cropRotation + 270) % 360;
+      initCropCanvasAndBox();
+    });
+  }
+
+  if (cropRotateRightBtn) {
+    cropRotateRightBtn.addEventListener('click', () => {
+      cropRotation = (cropRotation + 90) % 360;
+      initCropCanvasAndBox();
+    });
+  }
+
+  if (cropFlipHBtn) {
+    cropFlipHBtn.addEventListener('click', () => {
+      cropFlippedH = !cropFlippedH;
+      drawTransformedCropImage();
+    });
+  }
+
+  if (cropResetBtn) {
+    cropResetBtn.addEventListener('click', () => {
+      cropRotation = 0;
+      cropFlippedH = false;
+      cropAspectRatio = null;
+      cropRatioBtns.forEach(b => b.classList.toggle('active', b.dataset.ratio === 'free'));
+      initCropCanvasAndBox();
+    });
+  }
+
+  if (applyCropBtn) {
+    applyCropBtn.addEventListener('click', async () => {
+      if (!activeCropItem || !cropImg) return;
+
+      applyCropBtn.disabled = true;
+      applyCropBtn.textContent = 'Applying...';
+
+      try {
+        const tDims = getTransformedDims(cropImg.naturalWidth, cropImg.naturalHeight, cropRotation);
+        const scaleX = tDims.w / cropCanvas.width;
+        const scaleY = tDims.h / cropCanvas.height;
+
+        const sourceCropX = Math.round(cropBoxState.x * scaleX);
+        const sourceCropY = Math.round(cropBoxState.y * scaleY);
+        const sourceCropW = Math.round(cropBoxState.w * scaleX);
+        const sourceCropH = Math.round(cropBoxState.h * scaleY);
+
+        const fullCanvas = document.createElement('canvas');
+        fullCanvas.width = tDims.w;
+        fullCanvas.height = tDims.h;
+        const fCtx = fullCanvas.getContext('2d');
+
+        fCtx.translate(tDims.w / 2, tDims.h / 2);
+        fCtx.rotate((cropRotation * Math.PI) / 180);
+        if (cropFlippedH) fCtx.scale(-1, 1);
+
+        const isRotated = (cropRotation === 90 || cropRotation === 270);
+        const fw = isRotated ? tDims.h : tDims.w;
+        const fh = isRotated ? tDims.w : tDims.h;
+        fCtx.drawImage(cropImg, -fw / 2, -fh / 2, fw, fh);
+
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = sourceCropW;
+        outCanvas.height = sourceCropH;
+        const outCtx = outCanvas.getContext('2d');
+
+        outCtx.drawImage(
+          fullCanvas,
+          sourceCropX, sourceCropY, sourceCropW, sourceCropH,
+          0, 0, sourceCropW, sourceCropH
+        );
+
+        const mime = activeCropItem.originalFile.type || 'image/jpeg';
+        const croppedBlob = await new Promise(res => outCanvas.toBlob(res, mime, 0.96));
+
+        if (croppedBlob) {
+          activeCropItem.originalFile = new File([croppedBlob], activeCropItem.name, { type: croppedBlob.type });
+          activeCropItem.originalSize = croppedBlob.size;
+
+          if (activeCropItem.origUrl) URL.revokeObjectURL(activeCropItem.origUrl);
+          activeCropItem.origUrl = URL.createObjectURL(croppedBlob);
+
+          const thumb = document.getElementById(`thumb_${activeCropItem.id}`);
+          if (thumb) thumb.src = activeCropItem.origUrl;
+
+          if (activeCropItem.status === 'done') {
+            activeCropItem.status = 'pending';
+            activeCropItem.compressedBlob = null;
+            if (activeCropItem.compUrl) URL.revokeObjectURL(activeCropItem.compUrl);
+            activeCropItem.compUrl = null;
+            updateRow(activeCropItem);
+            updateConvertUI();
+            showToast(`Cropped "${activeCropItem.name}". Click "Convert" to recompress.`);
+          } else {
+            updateRow(activeCropItem);
+          }
+
+          updateMetrics();
+          closeCropModal();
+        }
+      } catch (err) {
+        console.error('Crop application error:', err);
+        showToast('Failed to apply crop.');
+      } finally {
+        applyCropBtn.disabled = false;
+        applyCropBtn.textContent = 'Apply Crop';
+      }
+    });
+  }
+
+  // --- Mobile Direct Upload & QR Code Sync Modal Handlers ---
+  if (mobileConnectBtn && mobileConnectModal) {
+    mobileConnectBtn.addEventListener('click', async () => {
+      mobileConnectModal.classList.add('open');
+      mobileConnectModal.style.display = 'flex';
+
+      let targetUrl = window.location.href;
+      if (isServerConnected) {
+        try {
+          const res = await fetch('/api/network-info');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.url) targetUrl = data.url;
+          }
+        } catch (e) {}
+      }
+
+      if (mobileConnectUrl) {
+        mobileConnectUrl.textContent = targetUrl;
+        mobileConnectUrl.href = targetUrl;
+      }
+
+      if (qrCanvas) {
+        renderQRCodeOnCanvas(qrCanvas, targetUrl);
+      }
+    });
+  }
+
+  if (closeMobileConnectModalBtn && mobileConnectModal) {
+    const closeSyncModal = () => {
+      mobileConnectModal.classList.remove('open');
+      mobileConnectModal.style.display = 'none';
+    };
+    closeMobileConnectModalBtn.addEventListener('click', closeSyncModal);
+    mobileConnectModal.addEventListener('click', (e) => {
+      if (e.target === mobileConnectModal) closeSyncModal();
+    });
+  }
 
   // Init
   checkServer();

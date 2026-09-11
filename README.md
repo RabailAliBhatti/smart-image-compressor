@@ -63,6 +63,10 @@ py server.py
 
 | Feature | Description |
 | :--- | :--- |
+| **Interactive Canvas Crop & Rotate** | Freeform and preset aspect ratios (**1:1 Square / US Visa**, **35x45mm Passport / CNIC**, **4:3**, **16:9**) with 90° clockwise/counter-clockwise rotation and horizontal flip before compression. |
+| **SSIM & PSNR Quality Metrics** | Real-time mathematical image fidelity scoring in the comparison modal: **Structural Similarity Index (SSIM)** and **Peak Signal-to-Noise Ratio (PSNR)** to guarantee zero perceptual degradation. |
+| **Preset Import & Export (JSON)** | One-click export of custom profiles and compression rules to `.json`, and seamless import on any device. |
+| **Local Wi-Fi Phone Upload & QR Sync** | Instant camera QR code connection for mobile phones on the same Wi-Fi network to upload and compress photos straight from your phone. |
 | **Interactive Curtain Split Slider** | Draggable swipe curtain (like Squoosh/Juxtapose) for 100% pixel-level Before/After comparison, with Fit, 1x, 2x zoom and Side-by-Side toggle. |
 | **Image-to-PDF Document Package** | Compile compressed images into a single multi-page PDF under strict size caps with customizable page margins and orientation. |
 | **EXIF & GPS Privacy Stripper** | One-click toggle that strips camera serials, timestamps, and GPS coordinates before export. |
@@ -72,6 +76,7 @@ py server.py
 | **Drag & Drop & Clipboard** | Drop single images, folders, or paste directly from your clipboard (`Ctrl+V`). |
 | **Numeric Target Size** | Direct number input (`[ 500 ] KB`) synchronized with precision slider and preset chips (`100 KB`, `250 KB`, `500 KB`, `1 MB`). |
 | **Multi-Format Selection** | Switch between **Auto (Keep Original)**, **PNG**, **JPEG**, **WebP**, and **AVIF**. |
+| **Standalone Windows .exe Builder** | Package everything into a single zero-dependency Windows desktop executable with `py build_exe.py` or `build_exe.bat`. |
 | **🔒 Protected Admin Portal** | Dedicated analytics console (`admin.html`) locked behind a master password with live SQLite audit logs and CSV export. |
 | **PBKDF2 Password Security** | Change the admin master password directly within the portal, securely stored as a salted PBKDF2-HMAC-SHA256 hash. |
 | **Brute-Force Rate Limiting** | Automatically locks out suspicious IPs for 15 minutes after 5 failed login attempts with HTTP 429 status. |

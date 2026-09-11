@@ -69,6 +69,13 @@
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
         </svg>
       </button>
+      <button type="button" class="btn-secondary" id="mobileConnectBtn" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;" title="Sync with Phone via Wi-Fi & QR Code">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+        Phone Sync
+      </button>
       <a href="admin.html" class="btn-secondary" style="text-decoration: none; font-size: 0.8rem; padding: 0.4rem 0.85rem;" title="Admin Analytics & Activity Log">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -175,6 +182,25 @@
             </svg>
             Add Custom Preset
           </button>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; margin-top: 0.45rem;">
+            <button type="button" class="btn-secondary" id="exportPresetsBtn" style="font-size: 0.75rem; padding: 0.35rem 0.5rem; justify-content: center;" title="Export presets as JSON">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Export JSON
+            </button>
+            <button type="button" class="btn-secondary" id="importPresetsBtn" style="font-size: 0.75rem; padding: 0.35rem 0.5rem; justify-content: center;" title="Import presets from JSON">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              Import JSON
+            </button>
+            <input type="file" id="importPresetsInput" accept=".json" style="display: none;">
+          </div>
         </div>
       </div>
 
@@ -546,11 +572,15 @@
   <div class="modal-backdrop" id="compareModal">
     <div class="modal-card modal-card-curtain">
       <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
           <h3 id="modalTitle" style="font-size: 0.95rem; font-weight: 600;">Image Comparison</h3>
           <div class="modal-view-mode">
             <button type="button" class="mode-tab active" id="modalCurtainModeBtn">Curtain Diff</button>
             <button type="button" class="mode-tab" id="modalSideModeBtn">Side by Side</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.4rem;" id="qualityMetricsWrap">
+            <span class="badge-tag badge-quality" id="ssimBadge" title="Structural Similarity Index (1.000 is identical)">SSIM: --</span>
+            <span class="badge-tag badge-quality" id="psnrBadge" title="Peak Signal-to-Noise Ratio in dB (>35 dB is visually lossless)">PSNR: -- dB</span>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -714,6 +744,96 @@
           <button type="submit" class="btn-primary">Save Preset</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Interactive Canvas Crop & Rotate Modal -->
+  <div class="modal-backdrop" id="cropModal" style="display: none;">
+    <div class="modal-card modal-card-crop">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <h3 style="font-size: 0.95rem; font-weight: 600;">Crop & Rotate Image</h3>
+          <span id="cropFileName" style="font-size: 0.8rem; color: var(--text-faint); font-family: var(--font-mono);">filename.jpg</span>
+        </div>
+        <button type="button" class="btn-close" id="closeCropModalBtn">&times;</button>
+      </div>
+      <div class="crop-modal-body">
+        <div class="crop-toolbar">
+          <div class="crop-group">
+            <span class="crop-label">Aspect Ratio:</span>
+            <div class="crop-ratio-btn-group" id="cropRatioGroup">
+              <button type="button" class="crop-btn active" data-ratio="free">Free</button>
+              <button type="button" class="crop-btn" data-ratio="1:1">1:1 (Visa / Square)</button>
+              <button type="button" class="crop-btn" data-ratio="35:45">35&times;45 (Passport)</button>
+              <button type="button" class="crop-btn" data-ratio="4:3">4:3</button>
+              <button type="button" class="crop-btn" data-ratio="16:9">16:9</button>
+            </div>
+          </div>
+          <div class="crop-group">
+            <span class="crop-label">Transform:</span>
+            <div class="crop-ratio-btn-group">
+              <button type="button" class="crop-btn" id="cropRotateLeftBtn" title="Rotate 90° Left">↺ 90°</button>
+              <button type="button" class="crop-btn" id="cropRotateRightBtn" title="Rotate 90° Right">↻ 90°</button>
+              <button type="button" class="crop-btn" id="cropFlipHBtn" title="Flip Horizontally">⇄ Flip</button>
+              <button type="button" class="crop-btn" id="cropResetBtn" title="Reset Changes">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="crop-canvas-wrapper" id="cropCanvasWrapper">
+          <canvas id="cropCanvas"></canvas>
+          <div class="crop-box" id="cropBox">
+            <div class="crop-handle nw" data-handle="nw"></div>
+            <div class="crop-handle ne" data-handle="ne"></div>
+            <div class="crop-handle sw" data-handle="sw"></div>
+            <div class="crop-handle se" data-handle="se"></div>
+            <div class="crop-grid-lines"></div>
+          </div>
+        </div>
+
+        <div class="crop-footer">
+          <div class="crop-dims" id="cropDimsDisplay">
+            Selection: <span id="cropSelectionDims" style="font-family: var(--font-mono); font-weight: 600; color: var(--text-main);">0 &times; 0 px</span>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="btn-secondary" id="cancelCropBtn">Cancel</button>
+            <button type="button" class="btn-primary" id="applyCropBtn">Apply Crop</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Local Network Mobile Upload & QR Code Sync Modal -->
+  <div class="modal-backdrop" id="mobileConnectModal" style="display: none;">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+          </svg>
+          <h3 style="font-size: 0.95rem; font-weight: 600;">Phone Direct Sync</h3>
+        </div>
+        <button type="button" class="btn-close" id="closeMobileConnectModalBtn">&times;</button>
+      </div>
+      <div style="padding: 1.5rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin: 0;">
+          Scan this QR code with your phone camera on the same Wi-Fi network to open the compressor on your phone or send images directly to this computer.
+        </p>
+
+        <div id="qrCodeContainer" style="background: #ffffff; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-base); display: inline-flex; justify-content: center; align-items: center;">
+          <canvas id="qrCanvas" width="200" height="200"></canvas>
+        </div>
+
+        <div style="width: 100%; background: var(--bg-card-subtle); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); word-break: break-all; font-family: var(--font-mono); font-size: 0.82rem;">
+          <a id="mobileConnectUrl" href="#" target="_blank" style="color: var(--accent-primary); text-decoration: none;">Loading LAN IP...</a>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: var(--text-faint);">
+          <span>💡 Both devices must be on the same local Wi-Fi router.</span>
+        </div>
+      </div>
     </div>
   </div>
 

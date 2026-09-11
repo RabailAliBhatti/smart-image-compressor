@@ -18,6 +18,7 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, str(Path(__file__).parent.parent.resolve()))
 
 import compress_images
+import server
 
 
 class TestCompressorEngine(unittest.TestCase):
@@ -171,6 +172,14 @@ class TestCompressorEngine(unittest.TestCase):
             self.assertEqual(img.format, "PNG")
         with Image.open(jpg_out) as img:
             self.assertEqual(img.format, "JPEG")
+
+    def test_get_local_ip(self):
+        """Test that get_local_ip returns a valid IP address string."""
+        ip = server.get_local_ip()
+        self.assertIsInstance(ip, str)
+        self.assertGreater(len(ip), 0)
+        parts = ip.split(".")
+        self.assertEqual(len(parts), 4, f"IP {ip} should have 4 octets")
 
 
 if __name__ == "__main__":
