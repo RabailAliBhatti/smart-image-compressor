@@ -4,6 +4,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
 [![Release](https://img.shields.io/badge/release-v1.0.0-indigo.svg)](https://github.com/RabailAliBhatti/smart-image-compressor)
+[![CI Test Suite](https://github.com/RabailAliBhatti/smart-image-compressor/actions/workflows/ci.yml/badge.svg)](https://github.com/RabailAliBhatti/smart-image-compressor/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-2563eb.svg)](https://rabailalibhatti.github.io/smart-image-compressor/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)]()
 
 > **Fast, offline-first batch image compressor and modern utility dashboard.**  
@@ -51,7 +53,9 @@ python server.py
 py server.py
 ```
 
-> **Standalone In-Browser Mode**: You can also double-click [**`index.html`**](file:///c:/Users/Rabail%20Ali/Desktop/Scripts/image-compressor/index.html) to run the dashboard directly in your browser with zero Python installation required.
+> 🌐 **Live Web Application (Zero Install)**: Try the live web tool directly at **[https://rabailalibhatti.github.io/smart-image-compressor/](https://rabailalibhatti.github.io/smart-image-compressor/)**.  
+> 📱 **PWA Desktop & Mobile App**: Open in any modern browser (Chrome, Edge, Safari) and click **Install App** to use it offline with a desktop shortcut.  
+> 💻 **Standalone Local Mode**: You can also double-click [**`index.html`**](file:///c:/Users/Rabail%20Ali/Desktop/Scripts/image-compressor/index.html) to run locally in your browser with zero Python installation required.
 
 ---
 
@@ -173,17 +177,40 @@ flowchart TD
 
 ```
 smart-image-compressor/
-├── .gitignore               # Security-tuned: excludes personal images & caches
-├── LICENSE                  # MIT Open Source License
-├── README.md                # Comprehensive documentation
-├── app.js                   # Client-side canvas compressor & dashboard logic
-├── compress_images.py       # Core Python compression engine & CLI
-├── images/                  # Source images directory (.gitkeep tracked)
-├── index.html               # Semantic, accessible web dashboard
-├── launch_dashboard.bat     # 1-click Windows launcher for Web Dashboard
-├── run_compressor.bat       # 1-click Windows launcher for CLI
-├── server.py                # Zero-dependency local web server & batch API
-└── styles.css               # Clean, high-contrast utility design system
+├── .github/
+│   └── workflows/
+│       └── ci.yml             # GitHub Actions CI matrix test runner
+├── icons/
+│   └── icon.svg               # Vector SVG application & PWA app icon
+├── tests/
+│   └── test_compressor.py     # Automated unit test suite (7 comprehensive tests)
+├── .gitignore                 # Excludes caches, temporary files, and user images
+├── LICENSE                    # MIT Open Source License
+├── README.md                  # Comprehensive documentation & guides
+├── admin.html                 # Password-protected admin analytics portal
+├── admin.js                   # Admin dashboard logic, PBKDF2 & IP blacklist
+├── app.js                     # Client-side canvas compressor, PWA & UI logic
+├── compress_images.py         # Core Python compression engine & CLI
+├── db.py                      # SQLite analytics database & telemetry queries
+├── images/                    # Source images directory (.gitkeep tracked)
+├── index.html                 # Semantic, accessible web dashboard
+├── launch_dashboard.bat       # 1-click Windows launcher for Web Dashboard
+├── manifest.json              # Progressive Web App (PWA) manifest
+├── run_compressor.bat         # 1-click Windows launcher for CLI
+├── server.py                  # Zero-dependency local web server & batch API
+├── styles.css                 # High-contrast design system (Dark & Light modes)
+└── sw.js                      # Offline service worker cache manager
+```
+
+---
+
+## 🧪 Running Automated Tests
+
+The repository includes a comprehensive Python unit test suite verifying strict size compliance, PNG transparency, CMYK conversions, EXIF stripping, and PDF packaging:
+
+```bash
+# Run the complete test suite locally:
+py -m unittest discover -s tests -p "test_*.py" -v
 ```
 
 ---

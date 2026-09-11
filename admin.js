@@ -8,6 +8,12 @@
 (() => {
   'use strict';
 
+  // Theme synchronization
+  const savedTheme = localStorage.getItem('smart_compressor_theme');
+  if (savedTheme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+
   // Auth State
   let adminToken = sessionStorage.getItem('admin_session_token') || null;
 

@@ -1,0 +1,24 @@
+{
+  "name": "Smart Image Compressor",
+  "short_name": "ImageCompressor",
+  "description": "Fast, offline-first batch image compressor. Compress JPG, PNG, WebP strictly under 500 KB.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090a0f",
+  "theme_color": "#2563eb",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "utilities",
+    "productivity",
+    "photo"
+  ]
+}

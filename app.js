@@ -32,6 +32,26 @@
   const maxHeightInput = document.getElementById('maxHeightInput');
   const formatRadios = document.querySelectorAll('input[name="formatOption"]');
 
+  // Theme Toggle & PWA Controls
+  const themeToggleBtn = document.getElementById('themeToggleBtn');
+  const themeIconSun = document.getElementById('themeIconSun');
+  const themeIconMoon = document.getElementById('themeIconMoon');
+  const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+  let deferredPwaPrompt = null;
+
+  // Custom Profile Presets
+  const openAddProfileBtn = document.getElementById('openAddProfileBtn');
+  const customProfileModal = document.getElementById('customProfileModal');
+  const closeProfileModalBtn = document.getElementById('closeProfileModalBtn');
+  const cancelProfileModalBtn = document.getElementById('cancelProfileModalBtn');
+  const customProfileForm = document.getElementById('customProfileForm');
+  const customProfilesList = document.getElementById('customProfilesList');
+  const cpNameInput = document.getElementById('cpNameInput');
+  const cpSizeInput = document.getElementById('cpSizeInput');
+  const cpFormatSelect = document.getElementById('cpFormatSelect');
+  const cpWidthInput = document.getElementById('cpWidthInput');
+  const cpHeightInput = document.getElementById('cpHeightInput');
+
   // Dropzone & File/Folder Inputs
   const dropzone = document.getElementById('dropzone');
   const fileInput = document.getElementById('fileInput');
@@ -256,6 +276,183 @@
       showToast(`Applied "${profileName}" profile`);
     });
   });
+
+  // --- Theme Switcher Logic ---
+  function applyTheme(theme) {
+    if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      if (themeIconSun) themeIconSun.style.display = 'none';
+      if (themeIconMoon) themeIconMoon.style.display = 'block';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      if (themeIconSun) themeIconSun.style.display = 'block';
+      if (themeIconMoon) themeIconMoon.style.display = 'none';
+    }
+    localStorage.setItem('smart_compressor_theme', theme);
+  }
+
+  const savedTheme = localStorage.getItem('smart_compressor_theme') ||
+    (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  applyTheme(savedTheme);
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      const newTheme = isLight ? 'dark' : 'light';
+      applyTheme(newTheme);
+      showToast(`Switched to ${newTheme} theme`);
+    });
+  }
+
+  // --- Service Worker & PWA Install Support ---
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch((err) => {
+        console.warn('ServiceWorker registration error:', err);
+      });
+    });
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPwaPrompt = e;
+    if (pwaInstallBtn) pwaInstallBtn.style.display = 'inline-flex';
+  });
+
+  if (pwaInstallBtn) {
+    pwaInstallBtn.addEventListener('click', async () => {
+      if (!deferredPwaPrompt) return;
+      deferredPwaPrompt.prompt();
+      const choice = await deferredPwaPrompt.userChoice;
+      if (choice && choice.outcome === 'accepted') {
+        showToast('Thank you for installing Smart Image Compressor!');
+      }
+      deferredPwaPrompt = null;
+      pwaInstallBtn.style.display = 'none';
+    });
+  }
+
+  // --- Custom Profiles Manager ---
+  function getCustomProfiles() {
+    try {
+      return JSON.parse(localStorage.getItem('custom_compression_profiles')) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveCustomProfiles(profiles) {
+    localStorage.setItem('custom_compression_profiles', JSON.stringify(profiles));
+  }
+
+  function renderCustomProfiles() {
+    if (!customProfilesList) return;
+    customProfilesList.innerHTML = '';
+    const profiles = getCustomProfiles();
+
+    profiles.forEach(p => {
+      const wrap = document.createElement('div');
+      wrap.className = 'profile-btn-custom-wrap';
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'profile-btn is-custom';
+      btn.dataset.id = p.id;
+      btn.innerHTML = `
+        <span>${p.name}</span>
+        <span class="profile-tag">&lt; ${p.size} KB</span>
+      `;
+
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        setTargetSize(p.size);
+
+        maxWidthInput.value = p.width || '';
+        maxHeightInput.value = p.height || '';
+        updateDimsPill();
+
+        const fmt = p.format || 'auto';
+        formatRadios.forEach(radio => {
+          if (radio.value === fmt) {
+            radio.checked = true;
+            selectedFormat = fmt;
+            if (pillFormat) pillFormat.textContent = fmt === 'auto' ? 'Auto' : fmt.toUpperCase();
+          }
+        });
+
+        if (pillProfile) pillProfile.textContent = p.name.split(' ')[0];
+        showToast(`Applied custom profile "${p.name}"`);
+      });
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'btn-delete-preset';
+      delBtn.title = 'Delete custom preset';
+      delBtn.innerHTML = '&times;';
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const updated = getCustomProfiles().filter(item => item.id !== p.id);
+        saveCustomProfiles(updated);
+        renderCustomProfiles();
+        showToast(`Deleted custom profile "${p.name}"`);
+      });
+
+      wrap.appendChild(btn);
+      wrap.appendChild(delBtn);
+      customProfilesList.appendChild(wrap);
+    });
+  }
+
+  if (openAddProfileBtn && customProfileModal) {
+    const closeProfileModal = () => {
+      customProfileModal.style.display = 'none';
+    };
+
+    openAddProfileBtn.addEventListener('click', () => {
+      customProfileModal.style.display = 'flex';
+      cpNameInput.value = '';
+      cpSizeInput.value = targetSizeKb || 250;
+      cpFormatSelect.value = selectedFormat || 'auto';
+      cpWidthInput.value = maxWidthInput.value || '';
+      cpHeightInput.value = maxHeightInput.value || '';
+    });
+
+    if (closeProfileModalBtn) closeProfileModalBtn.addEventListener('click', closeProfileModal);
+    if (cancelProfileModalBtn) cancelProfileModalBtn.addEventListener('click', closeProfileModal);
+
+    customProfileModal.addEventListener('click', (e) => {
+      if (e.target === customProfileModal) closeProfileModal();
+    });
+
+    if (customProfileForm) {
+      customProfileForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = cpNameInput.value.trim();
+        const size = parseInt(cpSizeInput.value, 10);
+        if (!name || isNaN(size)) return;
+
+        const newProfile = {
+          id: 'cp_' + Date.now(),
+          name,
+          size,
+          format: cpFormatSelect.value,
+          width: cpWidthInput.value ? parseInt(cpWidthInput.value, 10) : null,
+          height: cpHeightInput.value ? parseInt(cpHeightInput.value, 10) : null
+        };
+
+        const profiles = getCustomProfiles();
+        profiles.push(newProfile);
+        saveCustomProfiles(profiles);
+        renderCustomProfiles();
+        closeProfileModal();
+        showToast(`Saved custom profile "${name}"`);
+      });
+    }
+  }
+
+  renderCustomProfiles();
 
   // Size Controls Synchronization
   function setTargetSize(val) {
@@ -963,6 +1160,9 @@
       : (item.hasExif ? `<span class="badge-tag badge-neutral" style="font-size: 0.65rem;" title="Camera metadata stripped">🛡️ EXIF</span>` : '');
 
     tr.innerHTML = `
+      <td class="drag-col">
+        <span class="drag-handle" title="Drag to reorder pages for PDF export">⋮⋮</span>
+      </td>
       <td>
         <div class="cell-file">
           <img class="table-thumb" id="thumb_${item.id}" src="${item.origUrl}" alt="Preview" title="Thumbnail">
@@ -1001,6 +1201,68 @@
         </div>
       </td>
     `;
+
+    // Row Drag-and-Drop Reordering
+    tr.draggable = true;
+
+    tr.addEventListener('dragstart', (e) => {
+      tr.classList.add('is-dragging');
+      e.dataTransfer.setData('text/plain', item.id);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    tr.addEventListener('dragend', () => {
+      tr.classList.remove('is-dragging');
+      tableBody.querySelectorAll('tr').forEach(r => {
+        r.classList.remove('drag-over-above', 'drag-over-below');
+      });
+    });
+
+    tr.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const rect = tr.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (e.clientY < mid) {
+        tr.classList.add('drag-over-above');
+        tr.classList.remove('drag-over-below');
+      } else {
+        tr.classList.add('drag-over-below');
+        tr.classList.remove('drag-over-above');
+      }
+    });
+
+    tr.addEventListener('dragleave', () => {
+      tr.classList.remove('drag-over-above', 'drag-over-below');
+    });
+
+    tr.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const draggedId = e.dataTransfer.getData('text/plain');
+      if (!draggedId || draggedId === item.id) return;
+
+      const draggedRow = document.getElementById(draggedId);
+      if (!draggedRow) return;
+
+      const isAbove = tr.classList.contains('drag-over-above');
+      tr.classList.remove('drag-over-above', 'drag-over-below');
+
+      if (isAbove) {
+        tableBody.insertBefore(draggedRow, tr);
+      } else {
+        tableBody.insertBefore(draggedRow, tr.nextSibling);
+      }
+
+      // Sync internal items array order with DOM table order
+      const newOrder = [];
+      tableBody.querySelectorAll('tr').forEach(row => {
+        const found = items.find(i => i.id === row.id);
+        if (found) newOrder.push(found);
+      });
+      items.length = 0;
+      items.push(...newOrder);
+      showToast('Page order updated for PDF packaging');
+    });
 
     tableBody.appendChild(tr);
 

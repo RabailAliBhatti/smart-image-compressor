@@ -44,6 +44,35 @@
   --radius-lg: 14px;
 }
 
+[data-theme="light"] {
+  /* Clean, Crisp Slate Light Theme */
+  --bg-app: #f1f5f9;
+  --bg-surface: #ffffff;
+  --bg-surface-raised: #f8fafc;
+  --bg-input: #ffffff;
+  --bg-hover: #e2e8f0;
+
+  --border-dim: #e2e8f0;
+  --border-base: #cbd5e1;
+  --border-focus: #2563eb;
+
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-faint: #64748b;
+
+  --accent-primary: #2563eb;
+  --accent-primary-hover: #1d4ed8;
+  --accent-text: #ffffff;
+  
+  --success-text: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.12);
+  --success-border: rgba(22, 163, 74, 0.25);
+
+  --warning-text: #d97706;
+  --danger-text: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.12);
+}
+
 /* Reset */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -1834,4 +1863,155 @@ button:disabled {
   cursor: not-allowed;
   pointer-events: none;
 }
+
+/* ==========================================================================
+   Theme Switcher & PWA Install Controls
+   ========================================================================== */
+.theme-toggle-btn {
+  background-color: var(--bg-surface-raised);
+  border: 1px solid var(--border-dim);
+  color: var(--text-muted);
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--border-base);
+  color: var(--text-main);
+  background-color: var(--bg-hover);
+}
+
+.pwa-install-btn {
+  background-color: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  color: var(--accent-primary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pwa-install-btn:hover {
+  background-color: var(--accent-primary);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Custom Profile Presets UI
+   ========================================================================== */
+.btn-add-profile {
+  background-color: transparent;
+  border: 1px dashed var(--border-base);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.85rem;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: all 0.15s ease;
+  width: 100%;
+  margin-top: 0.4rem;
+}
+
+.btn-add-profile:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-main);
+  background-color: rgba(37, 99, 235, 0.08);
+}
+
+.profile-btn-custom-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.profile-btn-custom-wrap .profile-btn {
+  flex: 1;
+}
+
+.btn-delete-preset {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-dim);
+  color: var(--text-faint);
+  border-radius: var(--radius-sm);
+  width: 32px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-delete-preset:hover {
+  color: var(--danger-text);
+  border-color: var(--danger-text);
+  background-color: var(--danger-bg);
+}
+
+.modal-card-preset {
+  max-width: 440px;
+  width: 90%;
+}
+
+/* ==========================================================================
+   Table Row Drag-and-Drop (Reorder for PDF)
+   ========================================================================== */
+.drag-col {
+  width: 32px !important;
+  text-align: center !important;
+  padding: 0.5rem 0.2rem !important;
+}
+
+.drag-handle {
+  color: var(--text-faint);
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: var(--radius-xs);
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.drag-handle:hover {
+  color: var(--text-main);
+  background-color: var(--bg-hover);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+tr.is-dragging {
+  opacity: 0.35;
+  background-color: rgba(37, 99, 235, 0.1) !important;
+}
+
+tr.drag-over-above td {
+  border-top: 2px solid var(--accent-primary) !important;
+}
+
+tr.drag-over-below td {
+  border-bottom: 2px solid var(--accent-primary) !important;
+}
+
 
