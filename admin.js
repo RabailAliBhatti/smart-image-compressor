@@ -326,11 +326,47 @@
     }
   }
 
+  // --- Modal Helpers ---
+  function openModal(modal) {
+    if (!modal) return;
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => {
+      modal.classList.add('open');
+    });
+  }
+
+  function closeModal(modal) {
+    if (!modal) return;
+    modal.classList.remove('open');
+    setTimeout(() => {
+      if (!modal.classList.contains('open')) {
+        modal.style.display = 'none';
+      }
+    }, 150);
+  }
+
+  // Backdrop click and Escape key listeners
+  [passwordModal, ipModal].forEach(modal => {
+    if (!modal) return;
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal(modal);
+      }
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeModal(passwordModal);
+      closeModal(ipModal);
+    }
+  });
+
   // --- 3. Password Management Handlers ---
 
   if (adminSettingsBtn && passwordModal) {
     adminSettingsBtn.addEventListener('click', () => {
-      passwordModal.style.display = 'flex';
+      openModal(passwordModal);
       currentPassInput.value = '';
       newPassInput.value = '';
       confirmPassInput.value = '';
@@ -339,7 +375,7 @@
     });
 
     closePassModalBtn.addEventListener('click', () => {
-      passwordModal.style.display = 'none';
+      closeModal(passwordModal);
     });
 
     changePassForm.addEventListener('submit', async (e) => {
@@ -373,7 +409,7 @@
         const data = await res.json();
         if (res.ok && data.success) {
           showToast('Master password updated successfully!');
-          passwordModal.style.display = 'none';
+          closeModal(passwordModal);
         } else {
           passErrorMsg.textContent = data.error || 'Failed to update master password.';
           passErrorMsg.style.display = 'block';
@@ -391,13 +427,13 @@
 
   if (ipAccessBtn && ipModal) {
     ipAccessBtn.addEventListener('click', () => {
-      ipModal.style.display = 'flex';
+      openModal(ipModal);
       manualIpInput.value = '';
       loadIpAccess();
     });
 
     closeIpModalBtn.addEventListener('click', () => {
-      ipModal.style.display = 'none';
+      closeModal(ipModal);
     });
 
     blockIpSubmitBtn.addEventListener('click', async () => {
