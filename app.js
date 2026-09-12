@@ -1279,7 +1279,7 @@
       <td class="drag-col">
         <span class="drag-handle" title="Drag to reorder pages for PDF export">⋮⋮</span>
       </td>
-      <td>
+      <td class="file-col">
         <div class="cell-file">
           <img class="table-thumb" id="thumb_${item.id}" src="${item.origUrl}" alt="Preview" title="Thumbnail">
           <div class="file-name-wrapper">
@@ -1291,11 +1291,11 @@
           </div>
         </div>
       </td>
-      <td><span class="mono-num">${formatBytes(item.originalSize)}</span></td>
-      <td><span class="mono-num" id="compSize_${item.id}" style="color: var(--text-faint); font-size: 0.8rem;">Ready (&le; ${targetSizeKb} KB)</span></td>
-      <td><span class="badge-tag badge-neutral" id="badge_${item.id}">Ready to Convert</span></td>
-      <td>
-        <div class="row-actions" style="justify-content: flex-end;">
+      <td class="orig-col" data-label="Original"><span class="mono-num">${formatBytes(item.originalSize)}</span></td>
+      <td class="comp-col" data-label="Target / Output"><span class="mono-num" id="compSize_${item.id}" style="color: var(--text-faint); font-size: 0.8rem;">Ready (&le; ${targetSizeKb} KB)</span></td>
+      <td class="status-col" data-label="Status"><span class="badge-tag badge-neutral" id="badge_${item.id}">Ready to Convert</span></td>
+      <td class="actions-col">
+        <div class="row-actions">
           <button type="button" class="btn-table-icon" id="cropBtn_${item.id}" title="Crop & Rotate Image" style="color: var(--text-muted);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"></path>
