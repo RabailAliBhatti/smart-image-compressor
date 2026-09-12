@@ -537,4 +537,6 @@ def run_server(port: int = 5000, open_browser: bool = True):
 
 if __name__ == "__main__":
     open_b = "--no-browser" not in sys.argv
-    run_server(port=5000, open_browser=open_b)
+    port_env = int(os.environ.get("PORT", 5000))
+    run_server(port=port_env, open_browser=open_b)
+
