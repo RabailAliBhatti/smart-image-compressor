@@ -267,22 +267,24 @@
     });
   }
 
-  // Processing Mode Switch (Upload vs Local Folder)
-  modeUploadBtn.addEventListener('click', () => {
-    modeUploadBtn.classList.add('active');
-    modeFolderBtn.classList.remove('active');
-    uploadView.style.display = 'block';
-    localFolderView.style.display = 'none';
-    if (pillMode) pillMode.textContent = 'Upload Files';
-  });
+  // Processing Mode Switch (Upload vs Local Folder - safe fallback)
+  if (modeUploadBtn && modeFolderBtn) {
+    modeUploadBtn.addEventListener('click', () => {
+      modeUploadBtn.classList.add('active');
+      modeFolderBtn.classList.remove('active');
+      uploadView.style.display = 'block';
+      if (localFolderView) localFolderView.style.display = 'none';
+      if (pillMode) pillMode.textContent = 'Upload Files';
+    });
 
-  modeFolderBtn.addEventListener('click', () => {
-    modeFolderBtn.classList.add('active');
-    modeUploadBtn.classList.remove('active');
-    uploadView.style.display = 'none';
-    localFolderView.style.display = 'block';
-    if (pillMode) pillMode.textContent = 'Local Folder';
-  });
+    modeFolderBtn.addEventListener('click', () => {
+      modeFolderBtn.classList.add('active');
+      modeUploadBtn.classList.remove('active');
+      uploadView.style.display = 'none';
+      if (localFolderView) localFolderView.style.display = 'block';
+      if (pillMode) pillMode.textContent = 'Local Folder';
+    });
+  }
 
   // Preset Profile Buttons
   profileBtns.forEach(btn => {
@@ -789,7 +791,7 @@
     });
   }
 
-  // Recursive Directory Traversal
+  // Recursive Directory Traversal with complete batch retrieval
   async function traverseDirectory(entry, path = '') {
     const files = [];
     if (entry.isFile) {
@@ -798,7 +800,13 @@
       files.push(file);
     } else if (entry.isDirectory) {
       const reader = entry.createReader();
-      const entries = await new Promise((res, rej) => reader.readEntries(res, rej));
+      const entries = [];
+      const readBatch = () => new Promise((res, rej) => reader.readEntries(res, rej));
+      let batch = await readBatch();
+      while (batch && batch.length > 0) {
+        entries.push(...batch);
+        batch = await readBatch();
+      }
       const subPath = path ? `${path}/${entry.name}` : entry.name;
       for (const subEntry of entries) {
         const subFiles = await traverseDirectory(subEntry, subPath);
@@ -809,12 +817,30 @@
   }
 
   // Dropzone Handlers
-  browseBtn.addEventListener('click', () => fileInput.click());
-  browseFolderBtn.addEventListener('click', () => folderInput.click());
-  dropzone.addEventListener('click', (e) => {
-    if (e.target !== browseBtn && e.target !== browseFolderBtn && !browseFolderBtn.contains(e.target)) {
+  if (browseBtn) {
+    browseBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      fileInput.value = '';
       fileInput.click();
+    });
+  }
+
+  if (browseFolderBtn) {
+    browseFolderBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      folderInput.value = '';
+      folderInput.click();
+    });
+  }
+
+  dropzone.addEventListener('click', (e) => {
+    if (e.target.closest('#browseBtn') || e.target.closest('#browseFolderBtn')) {
+      return;
     }
+    fileInput.value = '';
+    fileInput.click();
   });
 
   fileInput.addEventListener('change', (e) => {
@@ -1082,9 +1108,9 @@
 
   // Handle Files Batch (Two-stage: queue first, convert on user action)
   async function handleFiles(files) {
-    const validFiles = files.filter(f => f.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp|avif|tiff?)$/i.test(f.name));
+    const validFiles = files.filter(f => f.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp|avif|tiff?|jfif|heic|heif|gif)$/i.test(f.name));
     if (validFiles.length === 0) {
-      showToast('No supported image files found.');
+      showToast('No supported image files found in selection.');
       return;
     }
 

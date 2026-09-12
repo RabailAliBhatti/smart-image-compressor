@@ -108,11 +108,11 @@
         <button type="button" class="btn-sidebar-toggle" id="toggleAllAccordionBtn">Toggle All</button>
       </div>
 
-      <!-- 01. Processing Mode Accordion -->
-      <div class="sidebar-accordion is-open" id="accMode">
-        <button type="button" class="accordion-header" aria-expanded="true">
+      <!-- 01. Processing Mode Accordion (Hidden) -->
+      <div class="sidebar-accordion" id="accMode" style="display: none;">
+        <button type="button" class="accordion-header" aria-expanded="false">
           <div class="accordion-title-wrap">
-            <span class="accordion-num">01</span>
+            <span class="accordion-num">00</span>
             <span class="accordion-title">Processing Mode</span>
           </div>
           <div class="accordion-meta">
@@ -142,11 +142,11 @@
         </div>
       </div>
 
-      <!-- 02. Preset Application Profiles Accordion -->
+      <!-- 01. Preset Application Profiles Accordion -->
       <div class="sidebar-accordion is-open" id="accProfile">
         <button type="button" class="accordion-header" aria-expanded="true">
           <div class="accordion-title-wrap">
-            <span class="accordion-num">02</span>
+            <span class="accordion-num">01</span>
             <span class="accordion-title">Application Profile</span>
           </div>
           <div class="accordion-meta">
@@ -205,11 +205,11 @@
         </div>
       </div>
 
-      <!-- 03. Target Size Configuration Accordion (Always Open by Default) -->
+      <!-- 02. Target Size Configuration Accordion (Always Open by Default) -->
       <div class="sidebar-accordion is-open" id="accSize">
         <button type="button" class="accordion-header" aria-expanded="true">
           <div class="accordion-title-wrap">
-            <span class="accordion-num">03</span>
+            <span class="accordion-num">02</span>
             <span class="accordion-title">Maximum File Size</span>
           </div>
           <div class="accordion-meta">
@@ -238,11 +238,11 @@
         </div>
       </div>
 
-      <!-- 04. Dimension Constraints Accordion -->
+      <!-- 03. Dimension Constraints Accordion -->
       <div class="sidebar-accordion" id="accDims">
         <button type="button" class="accordion-header" aria-expanded="false">
           <div class="accordion-title-wrap">
-            <span class="accordion-num">04</span>
+            <span class="accordion-num">03</span>
             <span class="accordion-title">Dimensional Limits</span>
           </div>
           <div class="accordion-meta">
@@ -266,11 +266,11 @@
         </div>
       </div>
 
-      <!-- 05. Output Format Accordion -->
+      <!-- 04. Output Format Accordion -->
       <div class="sidebar-accordion is-open" id="accFormat">
         <button type="button" class="accordion-header" aria-expanded="true">
           <div class="accordion-title-wrap">
-            <span class="accordion-num">05</span>
+            <span class="accordion-num">04</span>
             <span class="accordion-title">Output Format</span>
           </div>
           <div class="accordion-meta">
@@ -321,11 +321,11 @@
         </div>
       </div>
 
-      <!-- 06. Output File Renaming Rules Accordion -->
+      <!-- 05. Output File Renaming Rules Accordion -->
       <div class="sidebar-accordion" id="accNaming">
         <button type="button" class="accordion-header" aria-expanded="false">
           <div class="accordion-title-wrap">
-            <span class="accordion-num">06</span>
+            <span class="accordion-num">05</span>
             <span class="accordion-title">File Renaming</span>
           </div>
           <div class="accordion-meta">
@@ -348,11 +348,11 @@
         </div>
       </div>
 
-      <!-- 07. Privacy Shield Accordion -->
+      <!-- 06. Privacy Shield Accordion -->
       <div class="sidebar-accordion" id="accPrivacy">
         <button type="button" class="accordion-header" aria-expanded="false">
           <div class="accordion-title-wrap">
-            <span class="accordion-num">07</span>
+            <span class="accordion-num">06</span>
             <span class="accordion-title">Privacy Shield</span>
           </div>
           <div class="accordion-meta">
@@ -373,11 +373,11 @@
         </div>
       </div>
 
-      <!-- 08. Watermark & Stamp Accordion -->
+      <!-- 07. Watermark & Stamp Accordion -->
       <div class="sidebar-accordion" id="accWatermark">
         <button type="button" class="accordion-header" aria-expanded="false">
           <div class="accordion-title-wrap">
-            <span class="accordion-num">08</span>
+            <span class="accordion-num">07</span>
             <span class="accordion-title">Watermark & Stamp</span>
           </div>
           <div class="accordion-meta">
@@ -427,8 +427,8 @@
       <!-- Upload View -->
       <section id="uploadView">
         <div class="dropzone" id="dropzone">
-          <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/webp,image/bmp,image/avif,image/tiff" style="display: none;">
-          <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
+          <input type="file" id="fileInput" multiple accept="image/jpeg,image/png,image/webp,image/bmp,image/avif,image/tiff,image/jfif" style="display: none;">
+          <input type="file" id="folderInput" webkitdirectory mozdirectory directory multiple style="display: none;">
           <div class="dropzone-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
