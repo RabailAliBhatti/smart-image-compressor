@@ -75,7 +75,7 @@
 
   // Sidebar Accordions & Summary Pills
   const toggleAllAccordionBtn = document.getElementById('toggleAllAccordionBtn');
-  const accordions = document.querySelectorAll('.sidebar-accordion');
+  const accordions = document.querySelectorAll('.sidebar-accordion:not([style*="display: none"])');
   const pillMode = document.getElementById('pillMode');
   const pillProfile = document.getElementById('pillProfile');
   const pillSize = document.getElementById('pillSize');
@@ -256,7 +256,7 @@
 
   if (toggleAllAccordionBtn) {
     toggleAllAccordionBtn.addEventListener('click', () => {
-      const openCount = document.querySelectorAll('.sidebar-accordion.is-open').length;
+      const openCount = document.querySelectorAll('.sidebar-accordion.is-open:not([style*="display: none"])').length;
       const shouldOpen = openCount < accordions.length / 2;
       accordions.forEach(acc => {
         acc.classList.toggle('is-open', shouldOpen);
