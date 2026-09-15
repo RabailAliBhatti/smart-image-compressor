@@ -2253,6 +2253,135 @@ tr.drag-over-below td {
 }
 
 /* ==========================================================================
+   SEO Content & FAQ Section Styles
+   ========================================================================== */
+.seo-section {
+  max-width: 1480px;
+  margin: 3.5rem auto 2rem;
+  padding: 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.seo-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  padding: 2.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.seo-card h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.seo-card p, .seo-card li {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.seo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-top: 0.25rem;
+}
+
+.seo-feature-box {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm);
+  padding: 1.35rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.seo-feature-box h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.seo-feature-box p {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+/* FAQ Accordions */
+.seo-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.faq-item {
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-input);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.faq-item:hover {
+  border-color: var(--border-base);
+}
+
+.faq-question {
+  padding: 1rem 1.25rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.faq-question::-webkit-details-marker {
+  display: none;
+}
+
+.faq-question::after {
+  content: '+';
+  font-size: 1.25rem;
+  color: var(--accent-primary);
+  font-weight: 400;
+}
+
+.faq-item[open] .faq-question::after {
+  content: '−';
+}
+
+.faq-answer {
+  padding: 0 1.25rem 1.15rem;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.seo-footer {
+  text-align: center;
+  padding: 1.5rem 0 1rem;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+  border-top: 1px solid var(--border-dim);
+}
+
+/* ==========================================================================
    Comprehensive Mobile & Tablet Responsive Design System
    ========================================================================== */
 
@@ -2567,6 +2696,31 @@ tr.drag-over-below td {
   .path-grid {
     grid-template-columns: 1fr;
     gap: 0.6rem;
+  }
+
+  /* SEO Section Mobile */
+  .seo-section {
+    padding: 0 0.75rem;
+    margin: 2rem auto 1.5rem;
+  }
+
+  .seo-card {
+    padding: 1.5rem 1.15rem;
+  }
+
+  .seo-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .faq-question {
+    padding: 0.85rem 1rem;
+    font-size: 0.88rem;
+  }
+
+  .faq-answer {
+    padding: 0 1rem 1rem;
+    font-size: 0.84rem;
   }
 }
 
