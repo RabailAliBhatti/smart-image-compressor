@@ -622,6 +622,43 @@ body {
   margin-bottom: 1.25rem;
 }
 
+/* Privacy & Zero Data Storage Disclaimer Badge */
+.privacy-disclaimer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1.35rem;
+  padding: 0.55rem 1.15rem;
+  background-color: var(--success-bg);
+  border: 1px solid var(--success-border);
+  border-radius: 9999px;
+  max-width: 95%;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.privacy-disclaimer-pill:hover {
+  border-color: var(--success-text);
+  background-color: rgba(34, 197, 94, 0.16);
+}
+
+.privacy-shield-icon {
+  color: var(--success-text);
+  flex-shrink: 0;
+}
+
+.privacy-text {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  text-align: left;
+}
+
+.privacy-text strong {
+  color: var(--success-text);
+  font-weight: 600;
+}
+
 .btn-primary {
   background-color: var(--accent-primary);
   color: #ffffff;
@@ -1768,6 +1805,184 @@ body {
   font-weight: 600;
 }
 
+/* --- UPLOAD & SKELETON LOADER BANNER --- */
+.upload-loader-banner {
+  background-color: var(--bg-surface-raised);
+  border: 1px solid var(--border-base);
+  border-left: 3px solid var(--accent-primary);
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  transition: opacity 0.3s ease;
+}
+
+.upload-loader-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.upload-loader-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.upload-loader-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid var(--border-base);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: upload-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes upload-spin {
+  to { transform: rotate(360deg); }
+}
+
+.upload-loader-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.upload-loader-text strong {
+  font-size: 0.88rem;
+  color: var(--text-main);
+}
+
+.upload-loader-text span {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.upload-loader-count {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  background-color: rgba(37, 99, 235, 0.12);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-xs);
+}
+
+.upload-progress-track {
+  width: 100%;
+  height: 4px;
+  background-color: var(--border-dim);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.upload-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-primary), #38bdf8);
+  border-radius: 2px;
+  transition: width 0.2s ease-out;
+}
+
+/* --- SKELETON SHIMMER LOADING STRUCTURE --- */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-input) 20%,
+    var(--bg-hover) 50%,
+    var(--bg-input) 80%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite ease-in-out;
+  border-radius: var(--radius-xs);
+  display: inline-block;
+}
+
+[data-theme="light"] .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #e2e8f0 20%,
+    #f8fafc 50%,
+    #e2e8f0 80%
+  );
+  background-size: 200% 100%;
+}
+
+.skeleton-row {
+  pointer-events: none;
+  user-select: none;
+}
+
+.skeleton-row td {
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.skeleton-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-xs);
+  flex-shrink: 0;
+}
+
+.skeleton-line {
+  height: 12px;
+  border-radius: 3px;
+}
+
+.skeleton-line.w-long {
+  width: 140px;
+  max-width: 85%;
+}
+
+.skeleton-line.w-med {
+  width: 85px;
+  max-width: 60%;
+}
+
+.skeleton-line.w-sm {
+  width: 45px;
+}
+
+.skeleton-badge {
+  width: 85px;
+  height: 20px;
+  border-radius: var(--radius-xs);
+}
+
+.skeleton-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-xs);
+}
+
+@keyframes row-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-loaded {
+  animation: row-fade-in 0.28s ease-out forwards;
+}
+
 /* --- CONVERT ACTION BANNER --- */
 .convert-banner {
   background-color: var(--bg-surface-raised);
@@ -2594,7 +2809,8 @@ tr.drag-over-below td {
     gap: 0.75rem;
   }
 
-  .files-table .table-thumb {
+  .files-table .table-thumb,
+  .files-table .skeleton-thumb {
     width: 44px;
     height: 44px;
     border-radius: var(--radius-sm);

@@ -557,6 +557,17 @@
               Select Folder
             </button>
           </div>
+
+          <!-- Privacy & Zero Data Storage Disclaimer -->
+          <div class="privacy-disclaimer-pill" id="privacyDisclaimer">
+            <svg class="privacy-shield-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <polyline points="9 12 11 14 15 10"></polyline>
+            </svg>
+            <span class="privacy-text">
+              <strong>100% Private &amp; Zero Server Storage:</strong> Your photos never leave your device. All compression runs locally in your browser.
+            </span>
+          </div>
         </div>
       </section>
 
@@ -591,6 +602,25 @@
       <!-- Results Table & Summary -->
       <section class="results-container" id="resultsSection" style="display: none;">
         
+        <!-- Uploading & Parsing Loading Banner with Skeleton Feedback -->
+        <div class="upload-loader-banner" id="uploadLoaderBanner" style="display: none;">
+          <div class="upload-loader-header">
+            <div class="upload-loader-left">
+              <div class="upload-loader-spinner" id="uploadSpinner"></div>
+              <div class="upload-loader-text">
+                <strong id="uploadLoaderTitle">Reading &amp; Loading Images...</strong>
+                <span id="uploadLoaderSubtitle">Parsing files, generating previews, and inspecting metadata</span>
+              </div>
+            </div>
+            <div class="upload-loader-count">
+              <span id="uploadLoaderProgressText">0 / 0</span>
+            </div>
+          </div>
+          <div class="upload-progress-track">
+            <div class="upload-progress-bar" id="uploadProgressBar" style="width: 0%;"></div>
+          </div>
+        </div>
+
         <!-- Two-Stage Conversion Action Banner -->
         <div class="convert-banner" id="convertBanner">
           <div class="convert-banner-left">

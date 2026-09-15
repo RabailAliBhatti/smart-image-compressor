@@ -95,6 +95,13 @@
   const convertAllBtn = document.getElementById('convertAllBtn');
   const convertAllBtnText = document.getElementById('convertAllBtnText');
 
+  // Upload Loader Banner Elements
+  const uploadLoaderBanner = document.getElementById('uploadLoaderBanner');
+  const uploadLoaderTitle = document.getElementById('uploadLoaderTitle');
+  const uploadLoaderSubtitle = document.getElementById('uploadLoaderSubtitle');
+  const uploadLoaderProgressText = document.getElementById('uploadLoaderProgressText');
+  const uploadProgressBar = document.getElementById('uploadProgressBar');
+
   // Results & Table
   const resultsSection = document.getElementById('resultsSection');
   const resultsCount = document.getElementById('resultsCount');
@@ -1106,7 +1113,7 @@
     });
   }
 
-  // Handle Files Batch (Two-stage: queue first, convert on user action)
+  // Handle Files Batch (Two-stage: queue first with animated skeletons, convert on user action)
   async function handleFiles(files) {
     const validFiles = files.filter(f => f.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp|avif|tiff?|jfif|heic|heif|gif)$/i.test(f.name));
     if (validFiles.length === 0) {
@@ -1116,7 +1123,30 @@
 
     resultsSection.style.display = 'flex';
 
-    for (const file of validFiles) {
+    // Show upload loading banner with initial state
+    if (uploadLoaderBanner) {
+      uploadLoaderBanner.style.display = 'flex';
+      uploadLoaderBanner.style.opacity = '1';
+      if (uploadLoaderTitle) uploadLoaderTitle.textContent = `Reading & Loading ${validFiles.length} Image${validFiles.length > 1 ? 's' : ''}...`;
+      if (uploadLoaderSubtitle) uploadLoaderSubtitle.textContent = 'Generating client-side previews, inspecting metadata, and checking sizes';
+      if (uploadLoaderProgressText) uploadLoaderProgressText.textContent = `0 / ${validFiles.length}`;
+      if (uploadProgressBar) uploadProgressBar.style.width = '0%';
+    }
+
+    // Instantly inject shimmering skeleton rows for zero-delay visual feedback
+    const fileTasks = validFiles.map((file, idx) => {
+      const tempId = 'skel_' + Math.random().toString(36).substring(2, 9) + '_' + idx;
+      const skelEl = renderSkeletonRow(tempId, file.name);
+      tableBody.appendChild(skelEl);
+      return { file, tempId, skelEl };
+    });
+
+    let processedCount = 0;
+    const totalCount = validFiles.length;
+
+    for (let i = 0; i < fileTasks.length; i++) {
+      const task = fileTasks[i];
+      const file = task.file;
       const id = 'row_' + Math.random().toString(36).substring(2, 9);
       const origUrl = URL.createObjectURL(file);
       const exifInfo = await checkExifPresence(file);
@@ -1139,7 +1169,30 @@
       };
 
       items.push(item);
-      renderRow(item);
+      renderRow(item, task.skelEl);
+
+      processedCount++;
+      const pct = Math.round((processedCount / totalCount) * 100);
+      if (uploadProgressBar) uploadProgressBar.style.width = `${pct}%`;
+      if (uploadLoaderProgressText) uploadLoaderProgressText.textContent = `${processedCount} / ${totalCount}`;
+
+      // Slight micro-tick to let browser repaint frame smoothly when handling multiple images
+      if (totalCount > 1) {
+        await new Promise(r => setTimeout(r, 25));
+      }
+    }
+
+    // Finish upload banner with smooth fade out
+    if (uploadLoaderBanner) {
+      if (uploadLoaderTitle) uploadLoaderTitle.textContent = `All ${totalCount} image${totalCount > 1 ? 's' : ''} loaded!`;
+      if (uploadProgressBar) uploadProgressBar.style.width = '100%';
+      setTimeout(() => {
+        uploadLoaderBanner.style.opacity = '0';
+        setTimeout(() => {
+          uploadLoaderBanner.style.display = 'none';
+          uploadLoaderBanner.style.opacity = '1';
+        }, 280);
+      }, 350);
     }
 
     updateMetrics();
@@ -1288,8 +1341,48 @@
     }
   }
 
+  // Render Skeleton Placeholder Row
+  function renderSkeletonRow(tempId, fileName) {
+    const tr = document.createElement('tr');
+    tr.id = 'skeleton_' + tempId;
+    tr.className = 'skeleton-row';
+
+    tr.innerHTML = `
+      <td class="drag-col">
+        <span class="skeleton-shimmer skeleton-line w-sm" style="width: 14px; height: 14px; margin: 0 auto; display: block;"></span>
+      </td>
+      <td class="file-col">
+        <div class="cell-file">
+          <div class="skeleton-shimmer skeleton-thumb"></div>
+          <div class="file-name-wrapper" style="display: flex; flex-direction: column; gap: 0.35rem; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <span class="skeleton-shimmer skeleton-line w-long"></span>
+            </div>
+            <span class="skeleton-shimmer skeleton-line w-sm" style="opacity: 0.55;"></span>
+          </div>
+        </div>
+      </td>
+      <td class="orig-col" data-label="Original">
+        <span class="skeleton-shimmer skeleton-line w-sm"></span>
+      </td>
+      <td class="comp-col" data-label="Target / Output">
+        <span class="skeleton-shimmer skeleton-line w-med"></span>
+      </td>
+      <td class="status-col" data-label="Status">
+        <span class="skeleton-shimmer skeleton-badge"></span>
+      </td>
+      <td class="actions-col">
+        <div class="row-actions">
+          <span class="skeleton-shimmer skeleton-btn"></span>
+          <span class="skeleton-shimmer skeleton-btn"></span>
+        </div>
+      </td>
+    `;
+    return tr;
+  }
+
   // Render Table Row
-  function renderRow(item) {
+  function renderRow(item, replaceElement = null) {
     const tr = document.createElement('tr');
     tr.id = item.id;
 
@@ -1412,7 +1505,12 @@
       showToast('Page order updated for PDF packaging');
     });
 
-    tableBody.appendChild(tr);
+    tr.classList.add('card-loaded');
+    if (replaceElement && replaceElement.parentNode === tableBody) {
+      tableBody.replaceChild(tr, replaceElement);
+    } else {
+      tableBody.appendChild(tr);
+    }
 
     const cropBtn = document.getElementById(`cropBtn_${item.id}`);
     if (cropBtn) {
